@@ -97,8 +97,8 @@ Dans **Authentication › URL Configuration**, mettez dans **Site URL** l'adress
 |---|---|
 | **Commandes** | Voir les commandes (établissement, téléphone cliquable, date souhaitée, détail), changer le statut (Nouvelle › Confirmée › Livrée ou Annulée), ajouter une note interne, supprimer. Actualisation automatique chaque minute. |
 | **Produits** | Ajouter un goût, le renommer, changer sa couleur ou son ordre, ajouter ou retirer sa photo. Pour masquer un goût sans le supprimer, décochez « Visible ». |
-| **Prix & offre** | Paliers du prix dégressif (vous pouvez en ajouter), prix et minimum des cupcakes, offre bouquet (activer ou désactiver, titre, taille, prix), limites du bouquet sur mesure, textes de la carte. |
-| **Photos** | Photo sous le titre trompe-l'œil et photo sous « Cupcakes floraux ». Vous pouvez les ajouter, les changer ou les retirer. |
+| **Prix & offre** | Paliers du prix dégressif (vous pouvez en ajouter), minimum de pièces par goût (5 par défaut), bandeau « vrais fruits » (titre, texte, afficher ou non), prix et minimum des cupcakes, offre bouquet (activer ou désactiver, titre, taille, prix), limites du bouquet sur mesure, textes de la carte. |
+| **Photos & vidéos** | Pour le trompe-l'œil et pour les cupcakes : une photo et/ou une vidéo en boucle (MP4, 50 Mo max). Un bouton Photo / Vidéo choisit ce que voient les clients, à changer selon vos événements. |
 
 ### Photos : toujours le même rendu
 

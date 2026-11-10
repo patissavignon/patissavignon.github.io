@@ -397,6 +397,11 @@
     $('sCustMax').value = s.custom_max;
     $('sTagline').value = s.tagline || '';
     $('sNote').value = s.price_note || '';
+    $('sTleMin').value = s.tle_min_per_flavor;
+    $('sBannerOn').checked = !!s.banner_active;
+    $('sBannerEyebrow').value = s.banner_eyebrow || '';
+    $('sBannerTitle').value = s.banner_title || '';
+    $('sBannerText').value = s.banner_text || '';
   }
 
   function bindPrices() {
@@ -428,10 +433,13 @@
         promo_size: int('sPromoSize'), promo_price: num('sPromoPrice'),
         custom_min: int('sCustMin'), custom_max: int('sCustMax'),
         tagline: $('sTagline').value.trim(), price_note: $('sNote').value.trim(),
+        tle_min_per_flavor: int('sTleMin'),
+        banner_active: $('sBannerOn').checked, banner_eyebrow: $('sBannerEyebrow').value.trim(),
+        banner_title: $('sBannerTitle').value.trim(), banner_text: $('sBannerText').value.trim(),
         updated_at: new Date().toISOString()
       };
       ['cupcake_price', 'promo_price'].forEach(function (k) { if (!(data[k] >= 0)) problem = 'Vérifiez les prix (nombre positif).'; });
-      ['cupcake_min', 'promo_size', 'custom_min', 'custom_max'].forEach(function (k) { if (!(data[k] >= 1)) problem = 'Vérifiez les nombres de pièces (1 minimum).'; });
+      ['cupcake_min', 'promo_size', 'custom_min', 'custom_max', 'tle_min_per_flavor'].forEach(function (k) { if (!(data[k] >= 1)) problem = 'Vérifiez les nombres de pièces (1 minimum).'; });
       if (data.custom_max < data.custom_min) problem = 'Bouquet sur mesure : le maximum doit être supérieur au minimum.';
       if (problem) { err.textContent = problem; err.hidden = false; return; }
       var r = await sb.from('settings').update(data).eq('id', 1).select().single();
@@ -445,44 +453,95 @@
   /* ------------------------------------------------------------------ */
   /*  PHOTOS DE LA CARTE                                                */
   /* ------------------------------------------------------------------ */
+  var MEDIA = {
+    tle:     { image: 'tle_image_url',     video: 'tle_video_url',     mode: 'tle_media' },
+    cupcake: { image: 'cupcake_image_url', video: 'cupcake_video_url', mode: 'cupcake_media' }
+  };
+  var VIDEO_MAX = 50 * 1024 * 1024;
+
   function renderSlots() {
-    document.querySelectorAll('[data-slot]').forEach(function (slot) {
-      var url = settings[slot.getAttribute('data-slot')];
-      slot.querySelector('.slot-preview').innerHTML = url
-        ? '<img src="' + esc(url) + '" alt="Aperçu">'
-        : 'Pas de photo : rien ne s’affiche sur la carte';
-      slot.querySelector('[data-slot-remove]').hidden = !url;
+    document.querySelectorAll('[data-media]').forEach(function (slot) {
+      var m = MEDIA[slot.getAttribute('data-media')];
+      var img = settings[m.image], vid = settings[m.video], mode = settings[m.mode];
+      slot.querySelector('[data-prev="image"]').innerHTML = img
+        ? '<img src="' + esc(img) + '" alt="Aperçu de la photo">' : 'Pas de photo';
+      slot.querySelector('[data-prev="video"]').innerHTML = vid
+        ? '<video src="' + esc(vid) + '" muted loop playsinline autoplay aria-label="Aperçu de la vidéo"></video>' : 'Pas de vidéo';
+      slot.querySelector('[data-remove="image"]').hidden = !img;
+      slot.querySelector('[data-remove="video"]').hidden = !vid;
+      slot.querySelectorAll('input[type=radio]').forEach(function (r) { r.checked = r.value === mode; });
+      // Ce qui est réellement affiché sur la carte (repli si le fichier choisi manque)
+      var shown = (mode === 'video' && vid) || (!img && vid) ? 'video' : (img ? 'image' : null);
+      slot.querySelector('[data-prev="image"]').classList.toggle('is-shown', shown === 'image');
+      slot.querySelector('[data-prev="video"]').classList.toggle('is-shown', shown === 'video');
     });
   }
+
+  async function saveSettings(patch) {
+    var r = await sb.from('settings').update(patch).eq('id', 1).select().single();
+    if (r.error) throw r.error;
+    settings = r.data;
+    renderSlots();
+  }
+
+  async function uploadVideo(file) {
+    if (!/^video\//.test(file.type)) throw new Error('Ce fichier n\u2019est pas une vidéo.');
+    if (file.size > VIDEO_MAX) throw new Error('Vidéo trop lourde (' + Math.round(file.size / 1048576) + ' Mo). Maximum 50 Mo : raccourcissez-la à 10-15 secondes.');
+    var ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4';
+    var path = 'carte/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    var up = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false });
+    if (up.error) throw up.error;
+    return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  }
+
   function bindSlots() {
-    document.querySelectorAll('[data-slot]').forEach(function (slot) {
-      var key = slot.getAttribute('data-slot');
-      slot.querySelector('[data-slot-file]').addEventListener('change', async function (e) {
-        var file = e.target.files && e.target.files[0];
-        if (!file) return;
-        e.target.value = '';
-        try {
-          var old = settings[key];
-          var url = await uploadPhoto(file, 'carte', 'bandeau');
-          if (!url) return;
-          var patch = {}; patch[key] = url;
-          var r = await sb.from('settings').update(patch).eq('id', 1).select().single();
-          if (r.error) throw r.error;
-          settings = r.data;
-          if (old) await deletePhoto(old);
-          renderSlots();
-          toast('Photo enregistrée');
-        } catch (err) { fail(err); }
+    document.querySelectorAll('[data-media]').forEach(function (slot) {
+      var m = MEDIA[slot.getAttribute('data-media')];
+      slot.querySelectorAll('input[type=radio]').forEach(function (r) {
+        r.addEventListener('change', async function () {
+          if (!r.checked) return;
+          var key = r.value === 'video' ? m.video : m.image;
+          try {
+            var patch = {}; patch[m.mode] = r.value;
+            await saveSettings(patch);
+            toast(settings[key] ? 'La carte affiche maintenant la ' + (r.value === 'video' ? 'vidéo' : 'photo')
+              : 'Choix enregistré : ajoutez une ' + (r.value === 'video' ? 'vidéo' : 'photo') + ' pour qu\u2019elle s\u2019affiche');
+          } catch (err) { fail(err); }
+        });
       });
-      slot.querySelector('[data-slot-remove]').onclick = async function () {
-        var old = settings[key], patch = {}; patch[key] = null;
-        var r = await sb.from('settings').update(patch).eq('id', 1).select().single();
-        if (r.error) return fail(r.error);
-        settings = r.data;
-        await deletePhoto(old);
-        renderSlots();
-        toast('Photo retirée');
-      };
+      slot.querySelectorAll('[data-file]').forEach(function (input) {
+        input.addEventListener('change', async function (e) {
+          var file = e.target.files && e.target.files[0], kind = input.getAttribute('data-file');
+          e.target.value = '';
+          if (!file) return;
+          try {
+            var key = kind === 'video' ? m.video : m.image, old = settings[key], url;
+            if (kind === 'video') {
+              if (file.type === 'video/quicktime') toast('Vidéo .MOV : si elle ne s\u2019affiche pas sur certains téléphones, exportez-la en MP4.');
+              else toast('Envoi de la vidéo…');
+              url = await uploadVideo(file);
+            } else {
+              url = await uploadPhoto(file, 'carte', 'bandeau');
+              if (!url) return;
+            }
+            var patch = {}; patch[key] = url;
+            await saveSettings(patch);
+            if (old) await deletePhoto(old);
+            toast(kind === 'video' ? 'Vidéo enregistrée' : 'Photo enregistrée');
+          } catch (err) { fail(err); }
+        });
+      });
+      slot.querySelectorAll('[data-remove]').forEach(function (btn) {
+        btn.onclick = async function () {
+          var key = btn.getAttribute('data-remove') === 'video' ? m.video : m.image, old = settings[key];
+          try {
+            var patch = {}; patch[key] = null;
+            await saveSettings(patch);
+            await deletePhoto(old);
+            toast(btn.getAttribute('data-remove') === 'video' ? 'Vidéo retirée' : 'Photo retirée');
+          } catch (err) { fail(err); }
+        };
+      });
     });
   }
 

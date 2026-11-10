@@ -37,6 +37,7 @@
     Object.keys(cart.tle).forEach(function (k) { if (!ids[k]) delete cart.tle[k]; });
     Object.keys(cart.cup).forEach(function (k) { if (!ids[k]) delete cart.cup[k]; });
     if (!S.promo_active) cart.bouquets = [];
+    Object.keys(cart.tle).forEach(function (k) { if (cart.tle[k] < S.tle_min_per_flavor) cart.tle[k] = S.tle_min_per_flavor; });
   }
 
   /* ------------------------------------------------------------------ */
@@ -99,12 +100,13 @@
     var delay = ((i || 0) * 0.35).toFixed(2) + 's';
     return '<div class="item" data-tle="' + esc(p.id) + '" style="--shine-delay:' + delay + '">' + visual(p) +
       '<div class="name">' + n + '</div>' +
-      '<div class="stepper">' +
+      '<div class="stepper qty-stepper">' +
       '<button class="round minus" type="button" data-act="sub" aria-label="Retirer un ' + n + '">−</button>' +
-      '<span class="q" aria-live="polite">0</span>' +
+      '<input class="qty-input" type="number" inputmode="numeric" min="0" max="5000" step="1" placeholder="0"' +
+      ' aria-label="Nombre de pièces ' + n + ' (minimum ' + S.tle_min_per_flavor + ')">' +
       '<button class="round plus" type="button" data-act="add" aria-label="Ajouter un ' + n + '">+</button>' +
       '</div>' +
-      '<button class="chip" type="button" data-act="add10" aria-label="Ajouter 10 ' + n + '">+ 10 pièces</button>' +
+      '<div class="qty-hint" aria-live="polite"></div>' +
       '</div>';
   }
 
@@ -126,8 +128,18 @@
     $('tagline').textContent = S.tagline || '';
     $('priceNote').textContent = S.price_note || '';
 
-    setPhoto('tlePhoto', 'tlePhotoImg', S.tle_image_url);
-    setPhoto('cupPhoto', 'cupPhotoImg', S.cupcake_image_url);
+    setMedia('tlePhoto', 'tlePhotoImg', 'tleVideo', S.tle_media, S.tle_image_url, S.tle_video_url);
+    setMedia('cupPhoto', 'cupPhotoImg', 'cupVideo', S.cupcake_media, S.cupcake_image_url, S.cupcake_video_url);
+
+    // Bandeau « vrais fruits »
+    var minPrice = T.sortedTiers(S.tiers).reduce(function (m, t) { return Math.min(m, t.price); }, Infinity);
+    $('banner').hidden = !S.banner_active;
+    $('bannerEyebrow').textContent = S.banner_eyebrow || '';
+    $('bannerTitle').textContent = S.banner_title || '';
+    $('bannerText').textContent = S.banner_text || '';
+    $('bannerPrice').textContent = isFinite(minPrice) ? moneyShort(minPrice) : '';
+    $('bannerPriceText').textContent = isFinite(minPrice) ? 'Trompe-l\u2019œil dès ' + money(minPrice) + ' la pièce.' : '';
+    $('minNote').textContent = 'Minimum ' + S.tle_min_per_flavor + ' pièces par goût. Tapez directement le nombre voulu.';
 
     // Paliers
     var tiers = T.sortedTiers(S.tiers);
@@ -171,10 +183,23 @@
       money(S.cupcake_price) + ' la pièce, de ' + S.custom_min + ' à ' + S.custom_max + ' pièces.';
   }
 
-  function setPhoto(boxId, imgId, url) {
-    var box = $(boxId), img = $(imgId);
-    if (url) { img.src = url; box.hidden = false; img.onerror = function () { box.hidden = true; }; }
-    else { box.hidden = true; img.removeAttribute('src'); }
+  /** Affiche la vidéo ou la photo choisie dans le tableau de bord (repli sur l'autre si absente) */
+  function setMedia(boxId, imgId, vidId, mode, imageUrl, videoUrl) {
+    var box = $(boxId), img = $(imgId), vid = $(vidId);
+    var useVideo = videoUrl && (mode === 'video' || !imageUrl);
+    var useImage = !useVideo && imageUrl;
+    box.hidden = !(useVideo || useImage);
+    vid.hidden = !useVideo; img.hidden = !useImage;
+    if (useVideo) {
+      if (imageUrl) vid.poster = imageUrl;
+      vid.muted = true; vid.defaultMuted = true;
+      vid.src = videoUrl;
+      vid.onerror = function () { if (imageUrl) { vid.hidden = true; img.src = imageUrl; img.hidden = false; } else box.hidden = true; };
+      var p = vid.play(); if (p && p.catch) p.catch(function () { /* lecture auto bloquée : l'image d'aperçu reste */ });
+    } else if (useImage) {
+      img.src = imageUrl;
+      img.onerror = function () { box.hidden = true; };
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -186,7 +211,9 @@
     document.querySelectorAll('[data-tle]').forEach(function (el) {
       var q = cart.tle[el.getAttribute('data-tle')] || 0;
       el.classList.toggle('has', q > 0);
-      el.querySelector('.q').textContent = q;
+      var inp = el.querySelector('.qty-input');
+      if (document.activeElement !== inp) inp.value = q > 0 ? q : '';
+      el.querySelector('.minus').disabled = q === 0;
     });
     document.querySelectorAll('[data-cup]').forEach(function (el) {
       var q = cart.cup[el.getAttribute('data-cup')] || 0;
@@ -368,16 +395,46 @@
   /* ------------------------------------------------------------------ */
   function bump(map, id, d) { map[id] = Math.max(0, Math.min(5000, (map[id] || 0) + d)); if (!map[id]) delete map[id]; }
 
+  /** Trompe-l'œil : 0 ou au moins le minimum par goût (5 par défaut) */
+  function setTle(id, q, card) {
+    var min = S.tle_min_per_flavor, hint = card && card.querySelector('.qty-hint');
+    q = Math.max(0, Math.min(5000, Math.round(Number(q) || 0)));
+    if (q > 0 && q < min) {
+      q = min;
+      if (hint) { hint.textContent = 'Minimum ' + min + ' pièces'; clearTimeout(hint._t); hint._t = setTimeout(function () { hint.textContent = ''; }, 2500); }
+    }
+    if (q) cart.tle[id] = q; else delete cart.tle[id];
+  }
+  function stepTle(id, d, card) {
+    var cur = cart.tle[id] || 0, min = S.tle_min_per_flavor;
+    if (d > 0) setTle(id, cur === 0 ? min : cur + 1, card);
+    else setTle(id, cur <= min ? 0 : cur - 1, card);
+  }
+
   function bind() {
     document.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-act]');
       if (!b) return;
-      var act = b.getAttribute('data-act');
-      var d = act === 'add' ? 1 : act === 'sub' ? -1 : 10;
+      var d = b.getAttribute('data-act') === 'add' ? 1 : -1;
       var t = b.closest('[data-tle]'), c = b.closest('[data-cup]');
-      if (t) bump(cart.tle, t.getAttribute('data-tle'), d);
+      if (t) stepTle(t.getAttribute('data-tle'), d, t);
       else if (c) bump(cart.cup, c.getAttribute('data-cup'), d);
       update();
+    });
+
+    // Saisie directe du nombre de pièces
+    document.addEventListener('change', function (e) {
+      if (!e.target.classList.contains('qty-input')) return;
+      var t = e.target.closest('[data-tle]');
+      setTle(t.getAttribute('data-tle'), e.target.value, t);
+      e.target.value = cart.tle[t.getAttribute('data-tle')] || '';
+      update();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('qty-input')) e.target.blur();
+    });
+    document.addEventListener('focusin', function (e) {
+      if (e.target.classList && e.target.classList.contains('qty-input')) e.target.select();
     });
 
     $('promoAdd').onclick = function () { openSheet('promo'); };
@@ -416,6 +473,7 @@
       S = data.settings; P = data.products; DEMO = data.demo;
       ['cupcake_price', 'promo_price'].forEach(function (k) { S[k] = Number(S[k]); });
       ['cupcake_min', 'promo_size', 'custom_min', 'custom_max'].forEach(function (k) { S[k] = Number(S[k]); });
+      S.tle_min_per_flavor = Math.max(1, Number(S.tle_min_per_flavor) || 1);
       $('demoBanner').hidden = !DEMO;
       buildCatalog();
       loadCart();

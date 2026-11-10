@@ -72,7 +72,7 @@
     <button role="tab" type="button" data-tab="orders" aria-selected="true">Commandes <span class="pill" id="newCount" hidden></span></button>
     <button role="tab" type="button" data-tab="products" aria-selected="false">Produits</button>
     <button role="tab" type="button" data-tab="prices" aria-selected="false">Prix &amp; offre</button>
-    <button role="tab" type="button" data-tab="photos" aria-selected="false">Photos</button>
+    <button role="tab" type="button" data-tab="photos" aria-selected="false">Photos &amp; vidéos</button>
   </nav>
 
   <!-- ---------- COMMANDES ---------- -->
@@ -126,6 +126,9 @@
         <p class="muted small">Un palier = « à partir de X pièces, Y € la pièce ». Le premier palier doit commencer à 1.</p>
         <div id="tiersEditor" class="stack-sm"></div>
         <button class="btn sm" type="button" id="addTier">+ Ajouter un palier</button>
+        <div class="grid-form" style="margin-top:14px">
+          <div class="field"><label for="sTleMin">Minimum de pièces par goût</label><input id="sTleMin" type="number" step="1" min="1" required></div>
+        </div>
       </div>
       <div class="acard">
         <h3>Cupcakes à la pièce</h3>
@@ -152,6 +155,14 @@
         </div>
       </div>
       <div class="acard">
+        <h3>Bandeau « vrais fruits »</h3>
+        <p class="muted small">Affiché sous l'en-tête. Le prix « dès … » est calculé automatiquement avec votre palier le moins cher.</p>
+        <label class="check-line"><input type="checkbox" id="sBannerOn"> Afficher le bandeau</label>
+        <div class="field"><label for="sBannerEyebrow">Petit titre</label><input id="sBannerEyebrow" maxlength="40"></div>
+        <div class="field"><label for="sBannerTitle">Titre</label><input id="sBannerTitle" maxlength="80"></div>
+        <div class="field"><label for="sBannerText">Texte</label><textarea id="sBannerText" maxlength="300"></textarea></div>
+      </div>
+      <div class="acard">
         <h3>Textes de la carte</h3>
         <div class="field"><label for="sTagline">Phrase d'accueil</label><textarea id="sTagline" maxlength="240"></textarea></div>
         <div class="field"><label for="sNote">Mention en bas de carte</label><input id="sNote" maxlength="160"></div>
@@ -161,25 +172,47 @@
     </form>
   </section>
 
-  <!-- ---------- PHOTOS ---------- -->
+  <!-- ---------- PHOTOS & VIDÉOS ---------- -->
   <section class="panel" id="tab-photos" role="tabpanel" hidden>
-    <div class="panel-head"><h2>Photos de la carte</h2></div>
-    <p class="muted small">Ces photos s'affichent sous les titres de la carte. Les photos de chaque goût se gèrent dans l'onglet Produits. Chaque photo est automatiquement mise au même format et harmonisée : vous n'avez qu'à la cadrer.</p>
+    <div class="panel-head"><h2>Photos &amp; vidéos</h2></div>
+    <p class="muted small">Pour chaque catégorie, choisissez ce que voient vos clients : la photo ou la vidéo. Vous pouvez enregistrer les deux et basculer selon vos événements. Les photos des goûts se gèrent dans l'onglet Produits.</p>
     <div class="photo-slots">
-      <div class="acard photo-slot" data-slot="tle_image_url">
-        <h3>Photo trompe-l'œil</h3>
-        <div class="slot-preview"></div>
+      <div class="acard photo-slot" data-media="tle">
+        <h3>Trompe-l'œil</h3>
+        <div class="seg" role="radiogroup" aria-label="Affichage trompe-l'œil">
+          <label><input type="radio" name="media-tle" value="photo"> Photo</label>
+          <label><input type="radio" name="media-tle" value="video"> Vidéo</label>
+        </div>
+        <div class="slot-sub">Photo</div>
+        <div class="slot-preview" data-prev="image"></div>
         <div class="inline wrap">
-          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-slot-file></label>
-          <button class="btn sm" type="button" data-slot-remove>Retirer</button>
+          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-file="image"></label>
+          <button class="btn sm" type="button" data-remove="image">Retirer</button>
+        </div>
+        <div class="slot-sub">Vidéo <span class="muted small">(MP4, 50 Mo max, 5 à 15 s idéal)</span></div>
+        <div class="slot-preview" data-prev="video"></div>
+        <div class="inline wrap">
+          <label class="btn btn-dark sm file-btn">Choisir une vidéo<input type="file" accept="video/mp4,video/webm,video/quicktime" data-file="video"></label>
+          <button class="btn sm" type="button" data-remove="video">Retirer</button>
         </div>
       </div>
-      <div class="acard photo-slot" data-slot="cupcake_image_url">
-        <h3>Photo cupcakes floraux</h3>
-        <div class="slot-preview"></div>
+      <div class="acard photo-slot" data-media="cupcake">
+        <h3>Cupcakes floraux</h3>
+        <div class="seg" role="radiogroup" aria-label="Affichage cupcakes">
+          <label><input type="radio" name="media-cupcake" value="photo"> Photo</label>
+          <label><input type="radio" name="media-cupcake" value="video"> Vidéo</label>
+        </div>
+        <div class="slot-sub">Photo</div>
+        <div class="slot-preview" data-prev="image"></div>
         <div class="inline wrap">
-          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-slot-file></label>
-          <button class="btn sm" type="button" data-slot-remove>Retirer</button>
+          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-file="image"></label>
+          <button class="btn sm" type="button" data-remove="image">Retirer</button>
+        </div>
+        <div class="slot-sub">Vidéo <span class="muted small">(MP4, 50 Mo max, 5 à 15 s idéal)</span></div>
+        <div class="slot-preview" data-prev="video"></div>
+        <div class="inline wrap">
+          <label class="btn btn-dark sm file-btn">Choisir une vidéo<input type="file" accept="video/mp4,video/webm,video/quicktime" data-file="video"></label>
+          <button class="btn sm" type="button" data-remove="video">Retirer</button>
         </div>
       </div>
     </div>

@@ -23,7 +23,14 @@
     promo_active: true, promo_title: 'Bouquet de 7 cupcakes', promo_size: 7, promo_price: 20,
     custom_min: 6, custom_max: 60,
     tle_image_url: null, cupcake_image_url: null,
-    price_note: 'Prix HT · Livraison à convenir après validation'
+    price_note: 'Prix HT · Livraison à convenir après validation',
+    tle_min_per_flavor: 5,
+    banner_active: true,
+    banner_eyebrow: 'Notre différence',
+    banner_title: 'Le vrai fruit, au cœur de chaque pièce',
+    banner_text: 'Nous achetons des fruits frais et les transformons nous-mêmes en inserts. Là où beaucoup utilisent des gels aromatisés, vous servez le goût du vrai fruit.',
+    tle_video_url: null, cupcake_video_url: null,
+    tle_media: 'video', cupcake_media: 'photo'
   };
   var DEMO_PRODUCTS = [
     ['classique', 'Cacahuète', '#C99459'], ['classique', 'Pistache', '#9BB065'],

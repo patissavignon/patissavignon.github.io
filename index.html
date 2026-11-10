@@ -23,18 +23,36 @@
   <section class="screen" id="screenCarte" aria-label="Carte">
     <div class="content">
       <header class="hero">
-        <div class="eyebrow">Carte professionnelle</div>
-        <h1 id="brandName">Trompe l'Œil</h1>
-        <div class="sub" id="brandSub">EVENT</div>
-        <div class="rule"></div>
+        <div class="hero-brand">
+          <h1 id="brandName">Trompe l'Œil</h1>
+          <span class="sub" id="brandSub">EVENT</span>
+        </div>
         <p id="tagline"></p>
       </header>
 
       <div id="loading" class="loading">Chargement de la carte…</div>
 
       <div id="carteBody" hidden>
-        <!-- Photo trompe-l'œil (gérée depuis le tableau de bord) -->
-        <figure class="section-photo" id="tlePhoto" hidden><img alt="Pâtisseries trompe-l'œil Trompe l'Œil Event" id="tlePhotoImg"></figure>
+        <!-- Bandeau « vrais fruits » (textes modifiables dans le tableau de bord) -->
+        <section class="banner" id="banner" hidden aria-labelledby="bannerTitle">
+          <div class="banner-price" aria-hidden="true">
+            <span class="from">dès</span>
+            <span class="amount" id="bannerPrice"></span>
+            <span class="unit">la pièce</span>
+          </div>
+          <div class="banner-body">
+            <div class="eyebrow" id="bannerEyebrow"></div>
+            <h2 id="bannerTitle"></h2>
+            <p id="bannerText"></p>
+            <p class="sr" id="bannerPriceText"></p>
+          </div>
+        </section>
+
+        <!-- Vidéo ou photo trompe-l'œil (gérée depuis le tableau de bord) -->
+        <figure class="section-photo" id="tlePhoto" hidden>
+          <video id="tleVideo" muted loop playsinline autoplay preload="metadata" aria-label="Vidéo de nos pâtisseries trompe-l'œil" hidden></video>
+          <img alt="Pâtisseries trompe-l'œil Trompe l'Œil Event" id="tlePhotoImg" hidden>
+        </figure>
 
         <!-- Prix dégressif -->
         <div class="card">
@@ -46,6 +64,7 @@
         </div>
 
         <div class="sec-head"><h2>Les Classiques</h2><span class="count" id="countStd"></span></div>
+        <p class="sec-note" id="minNote"></p>
         <div class="grid" id="gridStd"></div>
 
         <div class="sec-head"><h2>Les Spéciaux</h2><span class="count" id="countSpe"></span></div>
@@ -59,7 +78,10 @@
           <p id="cupFlavours"></p>
         </div>
         <!-- Photo cupcakes (gérée depuis le tableau de bord) -->
-        <figure class="section-photo" id="cupPhoto" hidden><img alt="Cupcakes floraux Trompe l'Œil Event" id="cupPhotoImg"></figure>
+        <figure class="section-photo" id="cupPhoto" hidden>
+          <video id="cupVideo" muted loop playsinline autoplay preload="metadata" aria-label="Vidéo de nos cupcakes floraux" hidden></video>
+          <img alt="Cupcakes floraux Trompe l'Œil Event" id="cupPhotoImg" hidden>
+        </figure>
 
         <div class="card promo" id="promoCard" hidden>
           <div class="promo-top">

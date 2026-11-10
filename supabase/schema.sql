@@ -33,6 +33,18 @@ create table if not exists public.settings (
 );
 insert into public.settings (id) values (1) on conflict (id) do nothing;
 
+-- Ajouts version 2 (sans effet si les colonnes existent déjà)
+alter table public.settings add column if not exists tle_min_per_flavor int not null default 5 check (tle_min_per_flavor >= 1);
+alter table public.settings add column if not exists banner_active  boolean not null default true;
+alter table public.settings add column if not exists banner_eyebrow text not null default 'Notre différence';
+alter table public.settings add column if not exists banner_title   text not null default 'Le vrai fruit, au cœur de chaque pièce';
+alter table public.settings add column if not exists banner_text    text not null default 'Nous achetons des fruits frais et les transformons nous-mêmes en inserts. Là où beaucoup utilisent des gels aromatisés, vous servez le goût du vrai fruit.';
+alter table public.settings add column if not exists tle_video_url     text;
+alter table public.settings add column if not exists cupcake_video_url text;
+-- Pour chaque emplacement : afficher la photo ou la vidéo (au choix dans le tableau de bord)
+alter table public.settings add column if not exists tle_media text not null default 'video' check (tle_media in ('photo','video'));
+alter table public.settings add column if not exists cupcake_media text not null default 'photo' check (cupcake_media in ('photo','video'));
+
 -- ---------------------------------------------------------------------
 -- 2. PRODUITS : goûts de trompe-l'œil (classique / special)
 --               et goûts d'insert des cupcakes (cupcake)
@@ -132,8 +144,8 @@ create policy admins_select on public.admins for select to authenticated using (
 -- 6. PHOTOS (stockage public en lecture, écriture réservée au propriétaire)
 -- ---------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('photos', 'photos', true, 5242880, array['image/jpeg','image/png','image/webp'])
-on conflict (id) do nothing;
+values ('photos', 'photos', true, 52428800, array['image/jpeg','image/png','image/webp','video/mp4','video/webm','video/quicktime'])
+on conflict (id) do update set file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists photos_insert on storage.objects;
 drop policy if exists photos_update on storage.objects;
@@ -226,6 +238,9 @@ begin
       having sum((x->>'qty')::int) > 0
       order by pr.category, pr.sort_order
     loop
+      if r.qty < s.tle_min_per_flavor then
+        raise exception 'Trompe-l''œil % : minimum % pièces par goût', r.name, s.tle_min_per_flavor;
+      end if;
       v_items := v_items || jsonb_build_array(jsonb_build_object(
         'type', 'trompe_loeil', 'label', 'Trompe-l''œil ' || r.name,
         'qty', r.qty, 'pieces', r.qty, 'unit_price', v_unit, 'total', round(r.qty * v_unit, 2)));
