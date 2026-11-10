@@ -187,3 +187,5 @@ code { background: var(--line-soft); padding: 1px 6px; border-radius: 6px; font-
 .cm-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
 .cm-row:last-child { border-bottom: 0; }
 .cm-right { text-align: right; font-weight: 800; white-space: nowrap; }
+.sales-assign { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.sales-assign select { min-height: 36px; font-size: 14px; }

@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261110f">
+<link rel="stylesheet" href="css/style.css?v=20261110g">
 </head>
 <body>
 <div class="app" id="app">
@@ -152,6 +152,7 @@
         <div class="field"><label for="fEmail">Email</label><input id="fEmail" name="email" type="email" autocomplete="email" maxlength="160"></div>
         <div class="field"><label for="fDate">Date de livraison souhaitée</label><input id="fDate" name="delivery_date" type="date"></div>
         <div class="field"><label for="fMsg">Message</label><textarea id="fMsg" name="message" maxlength="1000" placeholder="Horaires, adresse de livraison, précisions…"></textarea></div>
+        <div class="field"><label for="fRef">Code commercial (facultatif)</label><input id="fRef" name="ref" maxlength="30" autocapitalize="off" autocomplete="off" placeholder="Si un commercial vous a conseillé"></div>
         <div class="form-error" id="formError" role="alert" hidden></div>
         <button class="btn btn-dark btn-lg btn-block" id="sendBtn" type="submit">Envoyer ma commande</button>
         <p class="muted" style="font-size:13px;text-align:center;margin:0 0 6px;line-height:1.45">Nous vous recontactons pour confirmer la date et l'heure de livraison.</p>
@@ -199,8 +200,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20261110f"></script>
-<script src="js/common.js?v=20261110f"></script>
-<script src="js/carte.js?v=20261110f"></script>
+<script src="js/config.js?v=20261110g"></script>
+<script src="js/common.js?v=20261110g"></script>
+<script src="js/carte.js?v=20261110g"></script>
 </body>
 </html>

@@ -200,7 +200,7 @@
         '<div class="order-top"><div><h3>N° ' + o.id + ' · ' + esc(o.business_name) + '</h3>' +
         '<div class="meta">Reçue le ' + esc(fmtDate(o.created_at)) +
         (o.delivery_date ? ' · <b>Livraison souhaitée : ' + esc(fmtDay(o.delivery_date)) + '</b>' : '') + '</div>' +
-        salesBadge(o.commercial_code) + '</div>' +
+        salesBadge(o.commercial_code) + salesSelect(o) + '</div>' +
         '<div class="order-total">' + money(o.total) + '</div></div>' +
         '<div class="order-contact">' +
         (o.contact_name ? '<span>' + esc(o.contact_name) + '</span>' : '') +
@@ -223,6 +223,15 @@
     $('orderFilter').onchange = loadOrders;
     $('ordersRefresh').onclick = function () { loadOrders().then(function () { toast('Commandes à jour'); }); };
     $('ordersList').addEventListener('change', async function (e) {
+      if (e.target.matches('[data-sales-assign]')) {
+        var oid = Number(e.target.closest('[data-order]').getAttribute('data-order'));
+        var code = e.target.value || null;
+        var u = await sb.from('orders').update({ commercial_code: code }).eq('id', oid);
+        if (u.error) return fail(u.error);
+        toast(code ? 'Commande attribuée' : 'Commande passée en client direct');
+        loadOrders();
+        return;
+      }
       if (!e.target.matches('[data-status]')) return;
       var id = Number(e.target.closest('[data-order]').getAttribute('data-order'));
       var r = await sb.from('orders').update({ status: e.target.value }).eq('id', id);
@@ -266,6 +275,15 @@
     if (!code) return '<div class="sales-badge direct">Client direct</div>';
     var c = commercials.find(function (x) { return x.code === code; });
     return '<div class="sales-badge">Apporté par ' + esc(c ? c.name : code) + '</div>';
+  }
+
+  function salesSelect(o) {
+    if (!commercials.length) return '';
+    var opts = '<option value="">Client direct</option>' + commercials.map(function (c) {
+      return '<option value="' + esc(c.code) + '"' + (c.code === o.commercial_code ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+    }).join('');
+    return '<div class="sales-assign"><label class="small" for="sc-' + o.id + '">Commercial</label>' +
+      '<select id="sc-' + o.id + '" data-sales-assign>' + opts + '</select></div>';
   }
 
   function slugify(s) {

@@ -29,7 +29,13 @@
     var r = new URLSearchParams(location.search).get('ref');
     r = (r || '').trim().toLowerCase();
     if (!/^[a-z0-9-]{2,30}$/.test(r)) return;
-    try { if (!localStorage.getItem(REF_KEY)) localStorage.setItem(REF_KEY, r); } catch (e) { /* navigation privée */ }
+    // Le dernier lien ouvert est retenu sur le téléphone. La base de données,
+    // elle, garde toujours le commercial de la toute première commande du client.
+    try { localStorage.setItem(REF_KEY, r); } catch (e) { /* navigation privée */ }
+  })();
+  (function prefillRef() {
+    var el = $('fRef'), r = storedRef() || (new URLSearchParams(location.search).get('ref') || '').trim().toLowerCase();
+    if (el && r) { el.defaultValue = r; el.value = r; }
   })();
 
   /* ------------------------------------------------------------------ */
@@ -357,7 +363,7 @@
 
   function payload(form) {
     var fd = new FormData(form), out = {};
-    ['business_name', 'contact_name', 'phone', 'email', 'delivery_date', 'message'].forEach(function (k) {
+    ['business_name', 'contact_name', 'phone', 'email', 'delivery_date', 'message', 'ref'].forEach(function (k) {
       out[k] = String(fd.get(k) || '').trim();
     });
     out.tle = Object.keys(cart.tle).filter(function (k) { return cart.tle[k] > 0; })
@@ -393,8 +399,8 @@
       if (DEMO) {
         result = { id: 'DÉMO', total: compute().total };
       } else {
-        var ref = storedRef() || (new URLSearchParams(location.search).get('ref') || '').trim().toLowerCase();
-        if (ref) data.ref = ref;
+        var ref = (data.ref || storedRef() || (new URLSearchParams(location.search).get('ref') || '')).trim().toLowerCase();
+        if (ref) data.ref = ref; else delete data.ref;
         var res = await T.sb.rpc('place_order', { p: data });
         if (res.error) throw res.error;
         result = res.data;
