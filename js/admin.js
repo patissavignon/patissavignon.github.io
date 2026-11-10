@@ -402,6 +402,9 @@
     $('sBannerEyebrow').value = s.banner_eyebrow || '';
     $('sBannerTitle').value = s.banner_title || '';
     $('sBannerText').value = s.banner_text || '';
+    $('sBpTop').value = s.banner_price_top == null ? 'dès' : s.banner_price_top;
+    $('sBpMain').value = s.banner_price_main || '';
+    $('sBpBottom').value = s.banner_price_bottom == null ? 'la pièce' : s.banner_price_bottom;
   }
 
   function bindPrices() {
@@ -436,6 +439,8 @@
         tle_min_per_flavor: int('sTleMin'),
         banner_active: $('sBannerOn').checked, banner_eyebrow: $('sBannerEyebrow').value.trim(),
         banner_title: $('sBannerTitle').value.trim(), banner_text: $('sBannerText').value.trim(),
+        banner_price_top: $('sBpTop').value.trim(), banner_price_main: $('sBpMain').value.trim(),
+        banner_price_bottom: $('sBpBottom').value.trim(),
         updated_at: new Date().toISOString()
       };
       ['cupcake_price', 'promo_price'].forEach(function (k) { if (!(data[k] >= 0)) problem = 'Vérifiez les prix (nombre positif).'; });

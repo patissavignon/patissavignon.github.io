@@ -41,6 +41,10 @@ alter table public.settings add column if not exists banner_title   text not nul
 alter table public.settings add column if not exists banner_text    text not null default 'Nous achetons des fruits frais et les transformons nous-mêmes en inserts. Là où beaucoup utilisent des gels aromatisés, vous servez le goût du vrai fruit.';
 alter table public.settings add column if not exists tle_video_url     text;
 alter table public.settings add column if not exists cupcake_video_url text;
+-- Carré prix du bandeau (texte libre ; prix du milieu vide = calculé automatiquement)
+alter table public.settings add column if not exists banner_price_top    text not null default 'dès';
+alter table public.settings add column if not exists banner_price_main   text not null default '';
+alter table public.settings add column if not exists banner_price_bottom text not null default 'la pièce';
 -- Pour chaque emplacement : afficher la photo ou la vidéo (au choix dans le tableau de bord)
 alter table public.settings add column if not exists tle_media text not null default 'video' check (tle_media in ('photo','video'));
 alter table public.settings add column if not exists cupcake_media text not null default 'photo' check (cupcake_media in ('photo','video'));

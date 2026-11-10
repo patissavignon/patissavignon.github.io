@@ -137,8 +137,17 @@
     $('bannerEyebrow').textContent = S.banner_eyebrow || '';
     $('bannerTitle').textContent = S.banner_title || '';
     $('bannerText').textContent = S.banner_text || '';
-    $('bannerPrice').textContent = isFinite(minPrice) ? moneyShort(minPrice) : '';
-    $('bannerPriceText').textContent = isFinite(minPrice) ? 'Trompe-l\u2019œil dès ' + money(minPrice) + ' la pièce.' : '';
+    // Carré prix : textes du tableau de bord, prix calculé si le champ du milieu est vide
+    var main = (S.banner_price_main || '').trim() || (isFinite(minPrice) ? moneyShort(minPrice) : '');
+    var top = S.banner_price_top == null ? 'dès' : S.banner_price_top;
+    var bottom = S.banner_price_bottom == null ? 'la pièce' : S.banner_price_bottom;
+    $('bannerPriceTop').textContent = top;
+    $('bannerPrice').textContent = main;
+    $('bannerPriceBottom').textContent = bottom;
+    $('bannerPrice').className = 'amount' + (main.length > 9 ? ' xlong' : main.length > 5 ? ' long' : '');
+    $('bannerPriceTop').hidden = !top; $('bannerPriceBottom').hidden = !bottom;
+    document.querySelector('.banner-price').hidden = !main;
+    $('bannerPriceText').textContent = [top, main, bottom].filter(Boolean).join(' ') + '.';
     $('minNote').textContent = 'Minimum ' + S.tle_min_per_flavor + ' pièces par goût. Tapez directement le nombre voulu.';
 
     // Paliers

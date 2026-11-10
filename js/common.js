@@ -30,7 +30,8 @@
     banner_title: 'Le vrai fruit, au cœur de chaque pièce',
     banner_text: 'Nous achetons des fruits frais et les transformons nous-mêmes en inserts. Là où beaucoup utilisent des gels aromatisés, vous servez le goût du vrai fruit.',
     tle_video_url: null, cupcake_video_url: null,
-    tle_media: 'video', cupcake_media: 'photo'
+    tle_media: 'video', cupcake_media: 'photo',
+    banner_price_top: 'dès', banner_price_main: '', banner_price_bottom: 'la pièce'
   };
   var DEMO_PRODUCTS = [
     ['classique', 'Cacahuète', '#C99459'], ['classique', 'Pistache', '#9BB065'],

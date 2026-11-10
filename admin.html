@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261110c">
-<link rel="stylesheet" href="css/admin.css?v=20261110c">
+<link rel="stylesheet" href="css/style.css?v=20261110d">
+<link rel="stylesheet" href="css/admin.css?v=20261110d">
 </head>
 <body class="admin">
 
@@ -156,8 +156,14 @@
       </div>
       <div class="acard">
         <h3>Bandeau « vrais fruits »</h3>
-        <p class="muted small">Affiché sous l'en-tête. Le prix « dès … » est calculé automatiquement avec votre palier le moins cher.</p>
+        <p class="muted small">Affiché sous l'en-tête. Si le champ « Prix » du carré est vide, il affiche automatiquement votre palier le moins cher.</p>
         <label class="check-line"><input type="checkbox" id="sBannerOn"> Afficher le bandeau</label>
+        <div class="slot-sub">Carré prix (à gauche)</div>
+        <div class="grid-form">
+          <div class="field"><label for="sBpTop">Ligne du haut</label><input id="sBpTop" maxlength="20" placeholder="dès"></div>
+          <div class="field"><label for="sBpMain">Prix (laisser vide = automatique)</label><input id="sBpMain" maxlength="18" placeholder="ex. 3 € à 3,50 €"></div>
+          <div class="field"><label for="sBpBottom">Ligne du bas</label><input id="sBpBottom" maxlength="20" placeholder="la pièce"></div>
+        </div>
         <div class="field"><label for="sBannerEyebrow">Petit titre</label><input id="sBannerEyebrow" maxlength="40"></div>
         <div class="field"><label for="sBannerTitle">Titre</label><input id="sBannerTitle" maxlength="80"></div>
         <div class="field"><label for="sBannerText">Texte</label><textarea id="sBannerText" maxlength="300"></textarea></div>
@@ -222,9 +228,9 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20261110c"></script>
-<script src="js/common.js?v=20261110c"></script>
-<script src="js/studio.js?v=20261110c"></script>
-<script src="js/admin.js?v=20261110c"></script>
+<script src="js/config.js?v=20261110d"></script>
+<script src="js/common.js?v=20261110d"></script>
+<script src="js/studio.js?v=20261110d"></script>
+<script src="js/admin.js?v=20261110d"></script>
 </body>
 </html>

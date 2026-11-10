@@ -102,13 +102,15 @@ img { max-width: 100%; display: block; }
   display: flex; align-items: center; gap: 14px;
 }
 .banner-price {
-  flex: none; width: 92px; min-height: 92px; border-radius: 16px;
+  flex: none; min-width: 92px; max-width: 128px; min-height: 92px; padding: 8px 10px; border-radius: 16px; text-align: center;
   background: var(--ink); color: var(--cream);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
 }
 .banner-price .from { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-light); font-weight: 700; }
 .banner-price .amount { font-family: var(--serif); font-weight: 600; font-size: 38px; line-height: 1; margin-top: 2px; }
+.banner-price .amount.long { font-size: 27px; line-height: 1.05; }
+.banner-price .amount.xlong { font-size: 21px; line-height: 1.1; }
 .banner-price .unit { font-size: 11px; color: var(--cream-soft); margin-top: 2px; }
 .banner-body { min-width: 0; }
 .banner-body .eyebrow { color: var(--gold-text); letter-spacing: 2px; font-size: 10px; }
