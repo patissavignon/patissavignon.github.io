@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261110k">
+<link rel="stylesheet" href="css/style.css?v=20261110l">
 </head>
 <body>
 <div class="app" id="app">
@@ -208,9 +208,17 @@
           <button class="round plus" id="pcsAdd" type="button" aria-label="Un cupcake de plus">+</button>
         </div>
       </div>
-      <div>
+      <div id="sheetFlavor">
         <div class="label">Goût de l'insert</div>
         <div class="opts" id="sheetOpts"></div>
+      </div>
+      <div id="sheetMix" hidden>
+        <div class="mix-head">
+          <div class="label">Répartition des inserts</div>
+          <button class="mix-reset" id="mixReset" type="button">Tout remettre à 0</button>
+        </div>
+        <div class="mix-status" id="mixStatus" aria-live="polite"></div>
+        <div class="mix-list" id="mixList"></div>
       </div>
       <div class="sheet-actions">
         <button class="btn" id="sheetCancel" type="button">Annuler</button>
@@ -222,9 +230,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20261110k"></script>
-<script src="js/common.js?v=20261110k"></script>
-<script src="js/carte.js?v=20261110k"></script>
-<script src="js/install.js?v=20261110k"></script>
+<script src="js/config.js?v=20261110l"></script>
+<script src="js/common.js?v=20261110l"></script>
+<script src="js/carte.js?v=20261110l"></script>
+<script src="js/install.js?v=20261110l"></script>
 </body>
 </html>

@@ -362,3 +362,20 @@ img { max-width: 100%; display: block; }
 .zoom img { width: 100%; max-height: 75vh; object-fit: contain; border-radius: 18px; background: var(--line-soft); }
 .zoom figcaption { color: var(--cream); font-family: var(--serif); font-size: 24px; margin-top: 10px; }
 .zoom-x { position: absolute; top: 14px; right: 14px; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--cream); color: var(--ink); font-size: 30px; line-height: 1; font-weight: 700; }
+
+/* Bouquet sur mesure : répartition goût par goût */
+.sheet { max-height: 92vh; overflow-y: auto; overscroll-behavior: contain; }
+.mix-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mix-reset { border: 0; background: none; color: var(--gold-text); font-weight: 700; font-size: 13px; text-decoration: underline; padding: 4px 0; }
+.mix-status { font-size: 14px; line-height: 1.35; background: var(--cream); border-radius: 12px; padding: 9px 12px; margin-bottom: 8px; }
+.mix-status.done { background: #E3EDD9; color: #2F4A22; }
+.mix-list { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 2px 10px; }
+.mix-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.mix-row:first-child { border-top: 0; }
+.mix-row .dot, .mix-row .pastille { width: 40px; height: 40px; border-radius: 50%; flex: none; object-fit: cover; box-shadow: none; }
+.mix-name { flex: 1 1 0; min-width: 0; font-size: 16px; font-weight: 700; }
+.mix-row .round { width: 42px; height: 42px; border-radius: 21px; font-size: 22px; flex: none; }
+.mix-row .round:disabled { opacity: .3; }
+.mix-q { width: 48px; height: 40px; border-radius: 10px; border: 1.5px solid #D9C7A6; text-align: center; font-size: 18px; font-weight: 800; color: var(--ink); background: var(--white); -moz-appearance: textfield; }
+.mix-q::-webkit-outer-spin-button, .mix-q::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mix-row.on .mix-q { border-color: var(--gold); background: var(--cream); }

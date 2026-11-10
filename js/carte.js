@@ -293,7 +293,7 @@
     if (cs.length) {
       var last = cs[cs.length - 1];
       $('customSummary').textContent = plural(cs.length, 'bouquet composé', 'bouquets composés') +
-        ' · dernier : ' + last.pieces + ' pièces, ' + last.flavor;
+        ' · dernier : ' + last.pieces + ' pièces (' + mixLabel(last).replace(/^Inserts? : /, '') + ')';
     }
 
     // Barre du bas
@@ -313,7 +313,7 @@
   var lastFocus = null;
   function openSheet(kind) {
     lastFocus = document.activeElement;
-    sheet = { kind: kind, pieces: Math.min(S.custom_max, Math.max(S.custom_min, 10)), flavor: 'Assortiment' };
+    sheet = { kind: kind, pieces: Math.min(S.custom_max, Math.max(S.custom_min, 10)), flavor: 'Assortiment', mix: {} };
     renderSheet();
     $('sheet').hidden = false;
     $('sheetOk').focus();
@@ -328,12 +328,70 @@
     $('sheetPrice').textContent = isC ? money(sheet.pieces * S.cupcake_price) : moneyShort(S.promo_price);
     $('sheetPieces').hidden = !isC;
     $('pcsVal').textContent = sheet.pieces + ' pièces';
-    $('pcsSub').disabled = sheet.pieces <= S.custom_min;
+    $('pcsSub').disabled = sheet.pieces <= Math.max(S.custom_min, isC ? mixSum() : 0);
     $('pcsAdd').disabled = sheet.pieces >= S.custom_max;
+    $('sheetFlavor').hidden = isC;
+    $('sheetMix').hidden = !isC;
+    if (isC) { renderMix(); return; }
     $('sheetOpts').innerHTML = flavours().map(function (f) {
       return '<button type="button" class="opt" data-flavor="' + esc(f) + '" aria-pressed="' + (f === sheet.flavor) + '">' + esc(f) + '</button>';
     }).join('');
   }
+
+  /* ---------- Bouquet sur mesure : répartition goût par goût ---------- */
+  function mixSum() {
+    return Object.keys(sheet.mix).reduce(function (a, k) { return a + (sheet.mix[k] || 0); }, 0);
+  }
+  function renderMix() {
+    var used = mixSum(), rest = sheet.pieces - used;
+    var st = $('mixStatus');
+    if (used === 0) {
+      st.innerHTML = 'Touchez <b>+</b> pour choisir vos goûts. Sans choix, le chef compose un <b>assortiment</b>.';
+    } else if (rest > 0) {
+      st.innerHTML = '<b>' + used + ' / ' + sheet.pieces + '</b> choisis · les <b>' + rest + '</b> restants seront en assortiment';
+    } else {
+      st.innerHTML = '<b>' + used + ' / ' + sheet.pieces + '</b> · tout est réparti ✓';
+    }
+    st.classList.toggle('done', used > 0 && rest === 0);
+    var list = $('mixList');
+    if (!list.children.length) {
+      list.innerHTML = byCat('cupcake').map(function (p) {
+        var n = esc(p.name);
+        return '<div class="mix-row" data-mix="' + n + '">' + visual(p, 'dot') +
+          '<div class="mix-name">' + n + '</div>' +
+          '<button class="round minus" type="button" data-m="sub" aria-label="Un ' + n + ' de moins">−</button>' +
+          '<input class="mix-q" type="number" inputmode="numeric" min="0" step="1" aria-label="Nombre de cupcakes ' + n + '">' +
+          '<button class="round plus" type="button" data-m="add" aria-label="Un ' + n + ' de plus">+</button>' +
+          '</div>';
+      }).join('');
+    }
+    Array.prototype.forEach.call(list.children, function (row) {
+      var f = row.getAttribute('data-mix'), q = sheet.mix[f] || 0;
+      var input = row.querySelector('.mix-q');
+      if (document.activeElement !== input) input.value = q;
+      row.classList.toggle('on', q > 0);
+      row.querySelector('[data-m="sub"]').disabled = q <= 0;
+      row.querySelector('[data-m="add"]').disabled = rest <= 0 && sheet.pieces >= S.custom_max;
+    });
+    $('mixReset').hidden = used === 0;
+  }
+  function setMix(f, q) {
+    q = Math.max(0, Math.floor(Number(q) || 0));
+    var others = mixSum() - (sheet.mix[f] || 0);
+    // Si on dépasse le nombre de pièces, le bouquet grandit (jusqu'au maximum)
+    if (others + q > sheet.pieces) sheet.pieces = Math.min(S.custom_max, others + q);
+    q = Math.min(q, sheet.pieces - others);
+    if (q > 0) sheet.mix[f] = q; else delete sheet.mix[f];
+  }
+  function mixLabel(b) {
+    var keys = Object.keys(b.mix || {});
+    if (!keys.length) return 'Insert : ' + b.flavor;
+    var used = 0;
+    var parts = keys.map(function (k) { used += b.mix[k]; return k + ' ×' + b.mix[k]; });
+    if (used < b.pieces) parts.push('Assortiment ×' + (b.pieces - used));
+    return 'Inserts : ' + parts.join(' · ');
+  }
+  function mixKey(b) { return b.pieces + '|' + b.flavor + '|' + JSON.stringify(b.mix || {}); }
 
   /* ------------------------------------------------------------------ */
   /*  Récapitulatif                                                     */
@@ -356,8 +414,8 @@
     group(cart.bouquets, function (b) { return b.flavor; }).forEach(function (g) {
       cupHtml += line(g.n, S.promo_title + ' · offre', 'Insert : ' + g.x.flavor, g.n * S.promo_price);
     });
-    group(cart.custom, function (b) { return b.pieces + '|' + b.flavor; }).forEach(function (g) {
-      cupHtml += line(g.n, 'Bouquet sur mesure · ' + g.x.pieces + ' pièces', 'Insert : ' + g.x.flavor, g.n * g.x.pieces * S.cupcake_price);
+    group(cart.custom, mixKey).forEach(function (g) {
+      cupHtml += line(g.n, 'Bouquet sur mesure · ' + g.x.pieces + ' pièces', mixLabel(g.x), g.n * g.x.pieces * S.cupcake_price);
     });
     if (cupHtml) html += '<div class="box"><div class="eyebrow">Cupcakes floraux</div>' + cupHtml + '</div>';
     $('recapLines').innerHTML = html;
@@ -375,8 +433,12 @@
       .map(function (k) { return { product_id: k, qty: cart.cup[k] }; });
     out.bouquets = group(cart.bouquets, function (b) { return b.flavor; })
       .map(function (g) { return { flavor: g.x.flavor, count: g.n }; });
-    out.custom = group(cart.custom, function (b) { return b.pieces + '|' + b.flavor; })
-      .map(function (g) { return { flavor: g.x.flavor, pieces: g.x.pieces, count: g.n }; });
+    out.custom = group(cart.custom, mixKey).map(function (g) {
+      var mix = Object.keys(g.x.mix || {}).map(function (k) { return { flavor: k, qty: g.x.mix[k] }; });
+      var o = { flavor: g.x.flavor || 'Assortiment', pieces: g.x.pieces, count: g.n };
+      if (mix.length) o.mix = mix;
+      return o;
+    });
     return out;
   }
 
@@ -477,7 +539,27 @@
     $('customOpen').onclick = function () { openSheet('custom'); };
     $('customClear').onclick = function () { cart.custom.pop(); update(); };
 
-    $('pcsSub').onclick = function () { sheet.pieces = Math.max(S.custom_min, sheet.pieces - 1); renderSheet(); };
+    $('pcsSub').onclick = function () {
+      var floor = sheet.kind === 'custom' ? Math.max(S.custom_min, mixSum()) : S.custom_min;
+      sheet.pieces = Math.max(floor, sheet.pieces - 1); renderSheet();
+    };
+    $('mixList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-m]');
+      if (!b) return;
+      var f = b.closest('[data-mix]').getAttribute('data-mix');
+      setMix(f, (sheet.mix[f] || 0) + (b.getAttribute('data-m') === 'add' ? 1 : -1));
+      renderSheet();
+    });
+    $('mixList').addEventListener('input', function (e) {
+      if (!e.target.matches('.mix-q')) return;
+      var f = e.target.closest('[data-mix]').getAttribute('data-mix');
+      setMix(f, e.target.value);
+      renderSheet();
+    });
+    $('mixList').addEventListener('focusout', function (e) {
+      if (e.target.matches('.mix-q')) renderSheet();
+    });
+    $('mixReset').onclick = function () { sheet.mix = {}; renderSheet(); };
     $('pcsAdd').onclick = function () { sheet.pieces = Math.min(S.custom_max, sheet.pieces + 1); renderSheet(); };
     $('sheetOpts').addEventListener('click', function (e) {
       var o = e.target.closest('[data-flavor]');
@@ -488,7 +570,15 @@
     $('sheet').addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
     $('sheetOk').onclick = function () {
       if (sheet.kind === 'promo') cart.bouquets.push({ flavor: sheet.flavor });
-      else cart.custom.push({ pieces: sheet.pieces, flavor: sheet.flavor });
+      else {
+        var mix = {};
+        Object.keys(sheet.mix).forEach(function (k) { if (sheet.mix[k] > 0) mix[k] = sheet.mix[k]; });
+        var keys = Object.keys(mix);
+        var fl = keys.length === 1 && mix[keys[0]] === sheet.pieces ? keys[0] : 'Assortiment';
+        cart.custom.push(keys.length === 1 && mix[keys[0]] === sheet.pieces
+          ? { pieces: sheet.pieces, flavor: fl }
+          : { pieces: sheet.pieces, flavor: fl, mix: mix });
+      }
       closeSheet(); update();
     };
 
