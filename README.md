@@ -73,6 +73,10 @@ window.TLE_CONFIG = {
    - Carte client : `https://VOTRE-NOM.github.io/trompe-loeil-event/`
    - Espace propriétaire : `https://VOTRE-NOM.github.io/trompe-loeil-event/admin.html`
 
+> **Adresse actuelle du site :** le dépôt s'appelle `patissavignon.github.io` (organisation `patissavignon`), le site est donc à la racine :
+> - Carte client : **https://patissavignon.github.io/**
+> - Espace propriétaire : **https://patissavignon.github.io/admin.html**
+
 ### Étape 3 · Derniers réglages Supabase
 
 Dans **Authentication › URL Configuration**, mettez dans **Site URL** l'adresse de votre carte. Ajoutez aussi l'adresse de `admin.html` dans **Redirect URLs**. Sans ce réglage, le lien « Mot de passe oublié » ne marche pas.
