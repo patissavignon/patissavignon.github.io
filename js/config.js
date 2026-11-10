@@ -15,6 +15,6 @@
    vous pouvez tester la carte, mais aucune commande n'est envoyée.
    ===================================================================== */
 window.TLE_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_KEY: ''
+  SUPABASE_URL: 'https://lwkjepobtujfvozbfdkg.supabase.co',
+  SUPABASE_KEY: 'sb_publishable_DqcduGk5aTtY6FjEsXk__w_z037ej0Z'
 };
