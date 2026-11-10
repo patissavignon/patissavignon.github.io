@@ -19,6 +19,7 @@
   var settings = null;
   var products = [];
   var orders = [];
+  var commercials = [];
   var refreshTimer = null;
   var currentTab = 'orders';
 
@@ -83,7 +84,7 @@
       return;
     }
     show('viewDash');
-    await Promise.all([loadSettings(), loadProducts()]);
+    await Promise.all([loadSettings(), loadProducts(), loadCommercials()]);
     await loadOrders();
     switchTab(currentTab);
   }
@@ -152,6 +153,7 @@
     });
     clearInterval(refreshTimer);
     if (name === 'orders') refreshTimer = setInterval(function () { if (!document.hidden) loadOrders(); }, 60000);
+    if (name === 'sales') loadSales();
   }
 
   /* ------------------------------------------------------------------ */
@@ -197,7 +199,8 @@
       return '<article class="order st-' + esc(o.status) + '" data-order="' + o.id + '">' +
         '<div class="order-top"><div><h3>N° ' + o.id + ' · ' + esc(o.business_name) + '</h3>' +
         '<div class="meta">Reçue le ' + esc(fmtDate(o.created_at)) +
-        (o.delivery_date ? ' · <b>Livraison souhaitée : ' + esc(fmtDay(o.delivery_date)) + '</b>' : '') + '</div></div>' +
+        (o.delivery_date ? ' · <b>Livraison souhaitée : ' + esc(fmtDay(o.delivery_date)) + '</b>' : '') + '</div>' +
+        salesBadge(o.commercial_code) + '</div>' +
         '<div class="order-total">' + money(o.total) + '</div></div>' +
         '<div class="order-contact">' +
         (o.contact_name ? '<span>' + esc(o.contact_name) + '</span>' : '') +
@@ -242,6 +245,163 @@
         if (d.error) return fail(d.error);
         toast('Commande supprimée');
         loadOrders();
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  COMMERCIAUX                                                       */
+  /* ------------------------------------------------------------------ */
+  var SITE_URL = new URL('./', location.href).href;
+
+  function salesLink(code) { return SITE_URL + '?ref=' + encodeURIComponent(code); }
+
+  function salesBadge(code) {
+    if (!code) return '<div class="sales-badge direct">Client direct</div>';
+    var c = commercials.find(function (x) { return x.code === code; });
+    return '<div class="sales-badge">Apporté par ' + esc(c ? c.name : code) + '</div>';
+  }
+
+  function slugify(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+  }
+
+  function monthKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+  }
+
+  function fillMonths() {
+    var sel = $('salesMonth');
+    if (sel.options.length) return;
+    var d = new Date(); d.setDate(1);
+    for (var i = 0; i < 12; i++) {
+      var o = document.createElement('option');
+      o.value = monthKey(d);
+      var label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      o.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      sel.appendChild(o);
+      d.setMonth(d.getMonth() - 1);
+    }
+  }
+
+  async function loadCommercials() {
+    var r = await sb.from('commercials').select('*').order('created_at');
+    if (r.error) { console.error(r.error); return; }
+    commercials = r.data || [];
+  }
+
+  async function loadSales() {
+    fillMonths();
+    await loadCommercials();
+    var r = await sb.from('commissions_mensuelles').select('*').eq('mois', $('salesMonth').value);
+    if (r.error) { fail(r.error); return; }
+    renderSales(r.data || []);
+  }
+
+  function renderSales(rows) {
+    var byCode = {};
+    rows.forEach(function (x) { byCode[x.commercial] = x; });
+    var totCom = rows.reduce(function (a, x) { return a + Number(x.commission_a_payer || 0); }, 0);
+    var totPcs = rows.reduce(function (a, x) { return a + Number(x.pieces || 0); }, 0);
+    var totCa = rows.reduce(function (a, x) { return a + Number(x.chiffre_affaires || 0); }, 0);
+    $('salesStats').innerHTML =
+      '<div class="stat"><div class="v">' + money(totCom) + '</div><div class="k">Commissions à payer</div></div>' +
+      '<div class="stat"><div class="v">' + totPcs + '</div><div class="k">Pièces via commerciaux</div></div>' +
+      '<div class="stat"><div class="v">' + money(totCa) + '</div><div class="k">Chiffre d’affaires apporté</div></div>';
+
+    var list = $('salesList');
+    if (!commercials.length) {
+      list.innerHTML = '<div class="empty">Aucun commercial pour l’instant. Ajoutez le premier ci-dessous.</div>';
+      return;
+    }
+    list.innerHTML = commercials.map(function (c) {
+      var s = byCode[c.code] || {};
+      var code = esc(c.code);
+      return '<article class="acard sales-card' + (c.active ? '' : ' off') + '" data-sales="' + code + '">' +
+        '<div class="order-top"><div><h3>' + esc(c.name) + '</h3>' +
+        '<div class="meta">' + (c.phone ? esc(c.phone) + ' · ' : '') + (c.active ? 'Actif' : 'Désactivé') + '</div></div>' +
+        '<div class="order-total">' + money(s.commission_a_payer || 0) + '</div></div>' +
+        '<div class="sales-figs">' +
+        '<span><b>' + (s.clients || 0) + '</b> client(s)</span>' +
+        '<span><b>' + (s.commandes || 0) + '</b> commande(s)</span>' +
+        '<span><b>' + (s.pieces || 0) + '</b> pièce(s)</span>' +
+        '<span><b>' + money(s.chiffre_affaires || 0) + '</b> de CA</span></div>' +
+        '<div class="sales-link">' + esc(salesLink(c.code)) + '</div>' +
+        '<div class="inline wrap">' +
+        '<button class="btn btn-dark sm" type="button" data-copy>Copier le lien</button>' +
+        '<button class="btn sm" type="button" data-wa>Envoyer par WhatsApp</button>' +
+        '</div>' +
+        '<div class="inline wrap" style="margin-top:10px">' +
+        '<label class="small" for="rate-' + code + '">Commission / pièce (€)</label>' +
+        '<input class="rate-input" id="rate-' + code + '" type="number" step="0.01" min="0" value="' + esc(c.commission_per_piece) + '" data-rate>' +
+        '<button class="btn sm" type="button" data-save-rate>Enregistrer</button>' +
+        '<button class="btn sm' + (c.active ? ' danger' : '') + '" type="button" data-toggle>' + (c.active ? 'Désactiver' : 'Réactiver') + '</button>' +
+        '</div></article>';
+    }).join('');
+  }
+
+  function bindSales() {
+    $('salesMonth').onchange = loadSales;
+
+    $('asName').addEventListener('input', function () {
+      var codeInput = $('asCode');
+      if (!codeInput.dataset.touched) codeInput.value = slugify($('asName').value.split(' ')[0]);
+    });
+    $('asCode').addEventListener('input', function () { $('asCode').dataset.touched = '1'; });
+
+    $('addSales').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var err = $('asError'); err.hidden = true;
+      var name = $('asName').value.trim();
+      var code = slugify($('asCode').value);
+      var rate = Number($('asRate').value);
+      var msg = '';
+      if (!name) msg = 'Indiquez le nom du commercial.';
+      else if (code.length < 2) msg = 'Le code du lien doit faire au moins 2 caractères.';
+      else if (commercials.some(function (c) { return c.code === code; })) msg = 'Le code « ' + code + ' » est déjà utilisé. Choisissez-en un autre.';
+      else if (!(rate >= 0)) msg = 'La commission doit être un nombre positif.';
+      if (msg) { err.textContent = msg; err.hidden = false; return; }
+      var r = await sb.from('commercials').insert({
+        code: code, name: name, phone: $('asPhone').value.trim() || null, commission_per_piece: rate
+      });
+      if (r.error) return fail(r.error);
+      $('addSales').reset(); $('asRate').value = '0.30'; delete $('asCode').dataset.touched;
+      toast('« ' + name + ' » ajouté');
+      loadSales();
+    });
+
+    $('salesList').addEventListener('click', async function (e) {
+      var card = e.target.closest('[data-sales]');
+      if (!card) return;
+      var code = card.getAttribute('data-sales');
+      var c = commercials.find(function (x) { return x.code === code; });
+      if (!c) return;
+      var link = salesLink(code);
+      if (e.target.matches('[data-copy]')) {
+        try { await navigator.clipboard.writeText(link); toast('Lien copié'); }
+        catch (err) { window.prompt('Copiez ce lien :', link); }
+      }
+      if (e.target.matches('[data-wa]')) {
+        var text = 'Bonjour ' + c.name.split(' ')[0] + ', voici ton lien personnel Trompe l’Œil Event à partager avec tes clients : ' + link;
+        var phone = String(c.phone || '').replace(/\D/g, '');
+        if (phone.charAt(0) === '0') phone = '33' + phone.slice(1);
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      }
+      if (e.target.matches('[data-save-rate]')) {
+        var rate = Number(card.querySelector('[data-rate]').value);
+        if (!(rate >= 0)) return toast('Commission invalide', true);
+        var r = await sb.from('commercials').update({ commission_per_piece: rate }).eq('code', code);
+        if (r.error) return fail(r.error);
+        toast('Commission enregistrée');
+        loadSales();
+      }
+      if (e.target.matches('[data-toggle]')) {
+        if (c.active && !window.confirm('Désactiver ' + c.name + ' ? Son lien n’attribuera plus de nouveaux clients, mais ses clients actuels restent comptés pour lui.')) return;
+        var t = await sb.from('commercials').update({ active: !c.active }).eq('code', code);
+        if (t.error) return fail(t.error);
+        toast(c.active ? 'Commercial désactivé' : 'Commercial réactivé');
+        loadSales();
       }
     });
   }
@@ -607,7 +767,7 @@
     document.querySelectorAll('[data-tab]').forEach(function (b) {
       b.onclick = function () { switchTab(b.getAttribute('data-tab')); };
     });
-    bindAuth(); bindOrders(); bindProducts(); bindPrices(); bindSlots();
+    bindAuth(); bindOrders(); bindProducts(); bindPrices(); bindSlots(); bindSales();
     var isRecovery = /type=recovery/.test(location.hash);
     var s = await sb.auth.getSession();
     if (isRecovery) { show('viewReset'); return; }

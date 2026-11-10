@@ -18,6 +18,21 @@
   var sheet = null;        // { kind: 'promo' | 'custom', pieces, flavor }
 
   /* ------------------------------------------------------------------ */
+  /*  Commercial : le lien ?ref=code est mémorisé sur le téléphone       */
+  /*  (le premier commercial reste, même si l'appli est installée après) */
+  /* ------------------------------------------------------------------ */
+  var REF_KEY = 'tle-commercial';
+  function storedRef() {
+    try { return localStorage.getItem(REF_KEY) || ''; } catch (e) { return ''; }
+  }
+  (function captureRef() {
+    var r = new URLSearchParams(location.search).get('ref');
+    r = (r || '').trim().toLowerCase();
+    if (!/^[a-z0-9-]{2,30}$/.test(r)) return;
+    try { if (!localStorage.getItem(REF_KEY)) localStorage.setItem(REF_KEY, r); } catch (e) { /* navigation privée */ }
+  })();
+
+  /* ------------------------------------------------------------------ */
   /*  Panier : sauvegarde légère dans le navigateur                      */
   /* ------------------------------------------------------------------ */
   function saveCart() {
@@ -378,6 +393,8 @@
       if (DEMO) {
         result = { id: 'DÉMO', total: compute().total };
       } else {
+        var ref = storedRef() || (new URLSearchParams(location.search).get('ref') || '').trim().toLowerCase();
+        if (ref) data.ref = ref;
         var res = await T.sb.rpc('place_order', { p: data });
         if (res.error) throw res.error;
         result = res.data;

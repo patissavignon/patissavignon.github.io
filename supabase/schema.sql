@@ -356,3 +356,215 @@ select * from (values
   ('cupcake',   'Mangue',    '#EFA236', 5)
 ) as v(category, name, color, sort_order)
 where not exists (select 1 from public.products);
+
+-- =====================================================================
+-- Commerciaux, rattachement des clients et commissions (ajout du 10/11/2026)
+-- =====================================================================
+create table public.commercials (
+  code text primary key check (code ~ '^[a-z0-9-]{2,30}$'),
+  name text not null check (length(trim(name)) between 1 and 80),
+  phone text,
+  commission_per_piece numeric not null default 0.30 check (commission_per_piece >= 0),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.commercials enable row level security;
+create policy commercials_select on public.commercials for select to authenticated using (is_admin());
+create policy commercials_insert on public.commercials for insert to authenticated with check (is_admin());
+create policy commercials_update on public.commercials for update to authenticated using (is_admin()) with check (is_admin());
+create policy commercials_delete on public.commercials for delete to authenticated using (is_admin());
+
+alter table public.orders add column commercial_code text references public.commercials(code) on update cascade on delete set null;
+alter table public.orders add column client_key text;
+create index orders_client_key_idx on public.orders (client_key, created_at);
+create index orders_commercial_idx on public.orders (commercial_code);
+
+CREATE OR REPLACE FUNCTION public.place_order(p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  s          public.settings%rowtype;
+  v_items    jsonb := '[]'::jsonb;
+  v_total    numeric := 0;
+  n_tle      int := 0;
+  n_cup      int := 0;
+  v_unit     numeric;
+  v_flavors  text[];
+  v_id       bigint;
+  r          record;
+  e          jsonb;
+  v_cnt      int;
+  v_pcs      int;
+  v_fl       text;
+  v_key      text;
+  v_com      text;
+begin
+  if p is null or jsonb_typeof(p) <> 'object' then
+    raise exception 'Commande invalide';
+  end if;
+  if length(p::text) > 20000 then
+    raise exception 'Commande trop volumineuse';
+  end if;
+  if coalesce(trim(p->>'business_name'), '') = '' then
+    raise exception 'Le nom de l''établissement est obligatoire';
+  end if;
+  if coalesce(trim(p->>'phone'), '') = '' then
+    raise exception 'Le téléphone est obligatoire';
+  end if;
+
+  select * into s from public.settings where id = 1;
+
+  for e in select * from jsonb_array_elements(coalesce(p->'tle','[]'::jsonb) || coalesce(p->'cupcakes','[]'::jsonb)) loop
+    if (e->>'qty') is null or (e->>'qty')::int < 0 or (e->>'qty')::int > 5000 then
+      raise exception 'Quantité invalide';
+    end if;
+  end loop;
+
+  select coalesce(sum((x->>'qty')::int), 0) into n_tle
+  from jsonb_array_elements(coalesce(p->'tle','[]'::jsonb)) x
+  join public.products pr
+    on pr.id = (x->>'product_id')::uuid and pr.active and pr.category in ('classique','special');
+
+  if n_tle > 0 then
+    select (t->>'price')::numeric into v_unit
+    from jsonb_array_elements(s.tiers) t
+    where (t->>'min')::int <= n_tle
+    order by (t->>'min')::int desc
+    limit 1;
+    if v_unit is null then
+      select (t->>'price')::numeric into v_unit
+      from jsonb_array_elements(s.tiers) t order by (t->>'min')::int asc limit 1;
+    end if;
+
+    for r in
+      select pr.name, pr.category, pr.sort_order, sum((x->>'qty')::int) as qty
+      from jsonb_array_elements(coalesce(p->'tle','[]'::jsonb)) x
+      join public.products pr
+        on pr.id = (x->>'product_id')::uuid and pr.active and pr.category in ('classique','special')
+      group by pr.name, pr.category, pr.sort_order
+      having sum((x->>'qty')::int) > 0
+      order by pr.category, pr.sort_order
+    loop
+      if r.qty < s.tle_min_per_flavor then
+        raise exception 'Trompe-l''œil % : minimum % pièces par goût', r.name, s.tle_min_per_flavor;
+      end if;
+      v_items := v_items || jsonb_build_array(jsonb_build_object(
+        'type', 'trompe_loeil', 'label', 'Trompe-l''œil ' || r.name,
+        'qty', r.qty, 'pieces', r.qty, 'unit_price', v_unit, 'total', round(r.qty * v_unit, 2)));
+      v_total := v_total + r.qty * v_unit;
+    end loop;
+  end if;
+
+  for r in
+    select pr.name, pr.sort_order, sum((x->>'qty')::int) as qty
+    from jsonb_array_elements(coalesce(p->'cupcakes','[]'::jsonb)) x
+    join public.products pr
+      on pr.id = (x->>'product_id')::uuid and pr.active and pr.category = 'cupcake'
+    group by pr.name, pr.sort_order
+    having sum((x->>'qty')::int) > 0
+    order by pr.sort_order
+  loop
+    n_cup := n_cup + r.qty;
+    v_items := v_items || jsonb_build_array(jsonb_build_object(
+      'type', 'cupcake', 'label', 'Cupcake ' || r.name,
+      'qty', r.qty, 'pieces', r.qty, 'unit_price', s.cupcake_price, 'total', round(r.qty * s.cupcake_price, 2)));
+    v_total := v_total + r.qty * s.cupcake_price;
+  end loop;
+  if n_cup > 0 and n_cup < s.cupcake_min then
+    raise exception 'Cupcakes à la pièce : minimum % pièces', s.cupcake_min;
+  end if;
+
+  select array_agg(name) into v_flavors
+  from public.products where category = 'cupcake' and active;
+  v_flavors := coalesce(v_flavors, '{}') || array['Assortiment'];
+
+  for e in select * from jsonb_array_elements(coalesce(p->'bouquets','[]'::jsonb)) loop
+    if not s.promo_active then raise exception 'L''offre bouquet n''est plus disponible'; end if;
+    v_cnt := (e->>'count')::int;
+    v_fl  := e->>'flavor';
+    if v_cnt is null or v_cnt < 1 or v_cnt > 200 then raise exception 'Nombre de bouquets invalide'; end if;
+    if not (v_fl = any(v_flavors)) then raise exception 'Goût inconnu : %', v_fl; end if;
+    v_items := v_items || jsonb_build_array(jsonb_build_object(
+      'type', 'bouquet_offre', 'label', s.promo_title, 'detail', 'Insert : ' || v_fl,
+      'qty', v_cnt, 'pieces', v_cnt * s.promo_size, 'unit_price', s.promo_price, 'total', round(v_cnt * s.promo_price, 2)));
+    v_total := v_total + v_cnt * s.promo_price;
+  end loop;
+
+  for e in select * from jsonb_array_elements(coalesce(p->'custom','[]'::jsonb)) loop
+    v_cnt := (e->>'count')::int;
+    v_pcs := (e->>'pieces')::int;
+    v_fl  := e->>'flavor';
+    if v_cnt is null or v_cnt < 1 or v_cnt > 200 then raise exception 'Nombre de bouquets invalide'; end if;
+    if v_pcs is null or v_pcs < s.custom_min or v_pcs > s.custom_max then
+      raise exception 'Bouquet sur mesure : entre % et % pièces', s.custom_min, s.custom_max;
+    end if;
+    if not (v_fl = any(v_flavors)) then raise exception 'Goût inconnu : %', v_fl; end if;
+    v_items := v_items || jsonb_build_array(jsonb_build_object(
+      'type', 'bouquet_mesure', 'label', 'Bouquet sur mesure · ' || v_pcs || ' pièces',
+      'detail', 'Insert : ' || v_fl,
+      'qty', v_cnt, 'pieces', v_cnt * v_pcs, 'unit_price', round(v_pcs * s.cupcake_price, 2),
+      'total', round(v_cnt * v_pcs * s.cupcake_price, 2)));
+    v_total := v_total + v_cnt * v_pcs * s.cupcake_price;
+  end loop;
+
+  if jsonb_array_length(v_items) = 0 then
+    raise exception 'La commande est vide';
+  end if;
+
+  -- Rattachement : un client (reconnu par son téléphone) garde
+  -- le commercial de sa toute première commande.
+  v_key := nullif(right(regexp_replace(p->>'phone', '\D', '', 'g'), 9), '');
+  if v_key is not null then
+    select o.commercial_code into v_com
+    from public.orders o
+    where o.client_key = v_key
+    order by o.created_at
+    limit 1;
+  end if;
+  if not found or v_key is null then
+    select c.code into v_com
+    from public.commercials c
+    where c.code = lower(trim(coalesce(p->>'ref', ''))) and c.active;
+  end if;
+
+  insert into public.orders (business_name, contact_name, phone, email, delivery_date, message, items, total, client_key, commercial_code)
+  values (
+    left(trim(p->>'business_name'), 120),
+    left(nullif(trim(p->>'contact_name'), ''), 120),
+    left(trim(p->>'phone'), 40),
+    left(nullif(trim(p->>'email'), ''), 160),
+    nullif(p->>'delivery_date', '')::date,
+    left(nullif(trim(p->>'message'), ''), 1000),
+    v_items,
+    round(v_total, 2),
+    v_key,
+    v_com
+  )
+  returning id into v_id;
+
+  return jsonb_build_object('id', v_id, 'total', round(v_total, 2), 'items', v_items);
+end;
+$function$;
+
+create view public.commissions_mensuelles with (security_invoker = true) as
+select
+  date_trunc('month', o.created_at at time zone 'Europe/Paris')::date as mois,
+  c.code as commercial,
+  c.name as nom,
+  count(distinct o.client_key) as clients,
+  count(*) as commandes,
+  sum(pc.pieces) as pieces,
+  sum(o.total) as chiffre_affaires,
+  c.commission_per_piece as commission_par_piece,
+  round(sum(pc.pieces) * c.commission_per_piece, 2) as commission_a_payer
+from public.orders o
+join public.commercials c on c.code = o.commercial_code
+cross join lateral (
+  select coalesce(sum((i->>'pieces')::int), 0) as pieces
+  from jsonb_array_elements(o.items) i
+) pc
+where o.status <> 'annulee'
+group by 1, c.code, c.name, c.commission_per_piece;
