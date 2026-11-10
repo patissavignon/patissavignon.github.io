@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trompe l'Œil Event · Carte professionnelle</title>
+<meta name="description" content="Commandez nos pâtisseries trompe-l'œil et cupcakes floraux : prix dégressif pour boulangeries, restaurants et traiteurs.">
+<meta name="theme-color" content="#2B1D14">
+<meta property="og:title" content="Trompe l'Œil Event · Carte professionnelle">
+<meta property="og:description" content="Pâtisseries trompe-l'œil et cupcakes floraux. Plus vous commandez, moins c'est cher.">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="demo-banner" id="demoBanner" hidden>Mode démo : la carte est consultable, mais les commandes ne sont pas encore envoyées.</div>
+
+  <!-- ===================== ÉCRAN 1 : LA CARTE ===================== -->
+  <section class="screen" id="screenCarte" aria-label="Carte">
+    <div class="content">
+      <header class="hero">
+        <div class="eyebrow">Carte professionnelle</div>
+        <h1 id="brandName">Trompe l'Œil</h1>
+        <div class="sub" id="brandSub">EVENT</div>
+        <div class="rule"></div>
+        <p id="tagline"></p>
+      </header>
+
+      <div id="loading" class="loading">Chargement de la carte…</div>
+
+      <div id="carteBody" hidden>
+        <!-- Photo trompe-l'œil (gérée depuis le tableau de bord) -->
+        <figure class="section-photo" id="tlePhoto" hidden><img alt="Pâtisseries trompe-l'œil Trompe l'Œil Event" id="tlePhotoImg"></figure>
+
+        <!-- Prix dégressif -->
+        <div class="card">
+          <h2 class="tiers-title">Plus vous commandez,<br>moins c'est cher</h2>
+          <p class="tiers-sub">Un seul prix pour toutes vos pièces, tous goûts confondus</p>
+          <div class="tiers" id="tiers"></div>
+          <div class="bar" aria-hidden="true"><div class="fill" id="barFill"></div><div id="barMarks"></div></div>
+          <div class="progress" id="progress" aria-live="polite"></div>
+        </div>
+
+        <div class="sec-head"><h2>Les Classiques</h2><span class="count" id="countStd"></span></div>
+        <div class="grid" id="gridStd"></div>
+
+        <div class="sec-head"><h2>Les Spéciaux</h2><span class="count" id="countSpe"></span></div>
+        <p class="sec-note">Même tarif dégressif, cumulé avec les classiques</p>
+        <div class="grid" id="gridSpe"></div>
+
+        <!-- Cupcakes -->
+        <div class="divider-title">
+          <div class="eyebrow">Aussi à la carte</div>
+          <h2>Cupcakes floraux</h2>
+          <p id="cupFlavours"></p>
+        </div>
+        <!-- Photo cupcakes (gérée depuis le tableau de bord) -->
+        <figure class="section-photo" id="cupPhoto" hidden><img alt="Cupcakes floraux Trompe l'Œil Event" id="cupPhotoImg"></figure>
+
+        <div class="card promo" id="promoCard" hidden>
+          <div class="promo-top">
+            <span class="badge">OFFRE DU MOMENT</span>
+            <span><span class="old" id="promoOld"></span> <span class="new" id="promoPrice"></span></span>
+          </div>
+          <h3 id="promoTitle"></h3>
+          <p id="promoText"></p>
+          <div class="actions-end" id="promoActions">
+            <button class="round minus" id="promoSub" type="button" aria-label="Retirer un bouquet">−</button>
+            <span class="q" id="promoQty" style="font-size:20px;font-weight:800;min-width:28px;text-align:center"></span>
+            <button class="btn btn-dark" id="promoAdd" type="button">Ajouter un bouquet</button>
+          </div>
+        </div>
+
+        <div class="card" id="cupCard">
+          <div class="list-head">
+            <h3>À la pièce</h3>
+            <div style="font-size:17px;font-weight:800"><span id="cupPrice"></span> <span style="font-size:12px;font-weight:600;color:var(--ink-soft)">la pièce</span></div>
+          </div>
+          <div class="note" id="cupNote" aria-live="polite"></div>
+          <div id="cupList"></div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;gap:8px">
+          <h3 class="serif" style="margin:0;font-size:24px;line-height:1">Bouquet sur mesure</h3>
+          <p class="muted" style="margin:0;font-size:14px;line-height:1.4" id="customText"></p>
+          <div style="font-size:14px;font-weight:700" id="customSummary" hidden></div>
+          <div class="actions-end">
+            <button class="btn" id="customClear" type="button" hidden>Retirer le dernier</button>
+            <button class="btn" id="customOpen" type="button">Composer un bouquet</button>
+          </div>
+        </div>
+
+        <p class="foot-note" id="priceNote"></p>
+      </div>
+    </div>
+
+    <div class="cartbar" id="cartbar">
+      <div class="tip" id="barTip" hidden></div>
+      <div class="line">
+        <div class="sum">
+          <div class="cnt" id="barCount">Votre panier est vide</div>
+          <div class="tot" id="barTotal">0,00 €</div>
+        </div>
+        <button class="btn btn-light" id="goRecap" type="button" hidden style="min-height:54px;border-radius:27px;font-weight:800">Voir ma commande</button>
+        <div class="blocked" id="barBlocked">Ajoutez vos pièces</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ÉCRAN 2 : RÉCAPITULATIF ===================== -->
+  <section class="screen" id="screenRecap" hidden aria-label="Ma commande">
+    <div class="recap">
+      <button class="btn back" id="backCarte" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        Modifier
+      </button>
+      <h1>Ma commande</h1>
+      <div id="recapLines"></div>
+      <div class="total-box"><div style="font-size:15px;font-weight:600">Total</div><div class="t" id="recapTotal"></div></div>
+
+      <form class="box form" id="orderForm" novalidate>
+        <div class="eyebrow">Vos coordonnées</div>
+        <div class="field"><label for="fBusiness">Établissement <span class="req">*</span></label><input id="fBusiness" name="business_name" autocomplete="organization" required maxlength="120" placeholder="Boulangerie du Port"></div>
+        <div class="field"><label for="fContact">Votre nom</label><input id="fContact" name="contact_name" autocomplete="name" maxlength="120"></div>
+        <div class="field"><label for="fPhone">Téléphone <span class="req">*</span></label><input id="fPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="40" placeholder="06 12 34 56 78"></div>
+        <div class="field"><label for="fEmail">Email</label><input id="fEmail" name="email" type="email" autocomplete="email" maxlength="160"></div>
+        <div class="field"><label for="fDate">Date de livraison souhaitée</label><input id="fDate" name="delivery_date" type="date"></div>
+        <div class="field"><label for="fMsg">Message</label><textarea id="fMsg" name="message" maxlength="1000" placeholder="Horaires, adresse de livraison, précisions…"></textarea></div>
+        <div class="form-error" id="formError" role="alert" hidden></div>
+        <button class="btn btn-dark btn-lg btn-block" id="sendBtn" type="submit">Envoyer ma commande</button>
+        <p class="muted" style="font-size:13px;text-align:center;margin:0 0 6px;line-height:1.45">Nous vous recontactons pour confirmer la date et l'heure de livraison.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== ÉCRAN 3 : CONFIRMATION ===================== -->
+  <section class="screen" id="screenSent" hidden aria-label="Commande envoyée">
+    <div class="sent">
+      <div class="check"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg></div>
+      <h1>Merci !</h1>
+      <p id="sentText">Votre commande est bien envoyée. Nous vous recontactons très vite pour la livraison.</p>
+      <div class="num" id="sentNum"></div>
+      <div class="amt" id="sentTotal"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost btn-block" id="newOrder" type="button" style="min-height:56px;border-radius:28px">Nouvelle commande</button>
+      <div class="serif italic" style="font-size:20px;margin-top:18px;color:var(--gold-light)">Trompe l'Œil Event</div>
+    </div>
+  </section>
+
+  <!-- ===================== FENÊTRE BOUQUET ===================== -->
+  <div class="sheet-wrap" id="sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-head"><h3 id="sheetTitle"></h3><div class="pr" id="sheetPrice"></div></div>
+      <div id="sheetPieces">
+        <div class="label">Nombre de cupcakes</div>
+        <div class="big-stepper">
+          <button class="round" id="pcsSub" type="button" aria-label="Un cupcake de moins">−</button>
+          <div class="v" id="pcsVal" aria-live="polite"></div>
+          <button class="round plus" id="pcsAdd" type="button" aria-label="Un cupcake de plus">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="label">Goût de l'insert</div>
+        <div class="opts" id="sheetOpts"></div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn" id="sheetCancel" type="button">Annuler</button>
+        <button class="btn btn-dark" id="sheetOk" type="button" style="flex:1 1 0;font-size:17px;font-weight:800">Ajouter au panier</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/carte.js"></script>
+</body>
+</html>

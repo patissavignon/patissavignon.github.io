@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Espace propriétaire · Trompe l'Œil Event</title>
+<meta name="theme-color" content="#2B1D14">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+
+<!-- ===================== PAS ENCORE CONFIGURÉ ===================== -->
+<main class="auth" id="viewSetup" hidden>
+  <div class="auth-card">
+    <div class="auth-brand"><span class="serif italic">Trompe l'Œil</span><small>EVENT</small></div>
+    <h1>Supabase n'est pas encore branché</h1>
+    <p class="muted">Ouvrez le fichier <code>js/config.js</code> et collez-y l'adresse et la clé publique de votre projet Supabase. Le guide <code>README.md</code> explique chaque étape.</p>
+    <a class="btn btn-block" href="index.html">Voir la carte (mode démo)</a>
+  </div>
+</main>
+
+<!-- ===================== CONNEXION ===================== -->
+<main class="auth" id="viewLogin" hidden>
+  <form class="auth-card" id="loginForm" novalidate>
+    <div class="auth-brand"><span class="serif italic">Trompe l'Œil</span><small>EVENT</small></div>
+    <h1>Espace propriétaire</h1>
+    <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="lPass">Mot de passe</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+    <div class="form-error" id="loginError" role="alert" hidden></div>
+    <button class="btn btn-dark btn-block btn-lg" type="submit" id="loginBtn">Se connecter</button>
+    <button class="linkbtn" type="button" id="forgotBtn">Mot de passe oublié ?</button>
+    <div class="form-ok" id="loginInfo" role="status" hidden></div>
+  </form>
+</main>
+
+<!-- ===================== NOUVEAU MOT DE PASSE ===================== -->
+<main class="auth" id="viewReset" hidden>
+  <form class="auth-card" id="resetForm" novalidate>
+    <h1>Nouveau mot de passe</h1>
+    <div class="field"><label for="rPass">Nouveau mot de passe (8 caractères minimum)</label><input id="rPass" type="password" autocomplete="new-password" minlength="8" required></div>
+    <div class="form-error" id="resetError" role="alert" hidden></div>
+    <button class="btn btn-dark btn-block btn-lg" type="submit">Enregistrer</button>
+  </form>
+</main>
+
+<!-- ===================== ACCÈS REFUSÉ ===================== -->
+<main class="auth" id="viewDenied" hidden>
+  <div class="auth-card">
+    <h1>Accès réservé</h1>
+    <p class="muted">Le compte <b id="deniedEmail"></b> n'est pas autorisé à gérer le site. Ajoutez cet email dans la table <code>admins</code> de Supabase.</p>
+    <button class="btn btn-block" type="button" data-logout>Se déconnecter</button>
+  </div>
+</main>
+
+<!-- ===================== TABLEAU DE BORD ===================== -->
+<div class="dash" id="viewDash" hidden>
+  <header class="topbar">
+    <div class="auth-brand light"><span class="serif italic">Trompe l'Œil</span><small>EVENT</small></div>
+    <div class="topbar-right">
+      <a class="btn btn-ghost sm" href="index.html" target="_blank" rel="noopener">Voir la carte</a>
+      <button class="btn btn-ghost sm" type="button" data-logout>Déconnexion</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections du tableau de bord">
+    <button role="tab" type="button" data-tab="orders" aria-selected="true">Commandes <span class="pill" id="newCount" hidden></span></button>
+    <button role="tab" type="button" data-tab="products" aria-selected="false">Produits</button>
+    <button role="tab" type="button" data-tab="prices" aria-selected="false">Prix &amp; offre</button>
+    <button role="tab" type="button" data-tab="photos" aria-selected="false">Photos</button>
+  </nav>
+
+  <!-- ---------- COMMANDES ---------- -->
+  <section class="panel" id="tab-orders" role="tabpanel">
+    <div class="panel-head">
+      <h2>Commandes</h2>
+      <div class="inline">
+        <label class="sr" for="orderFilter">Filtrer</label>
+        <select id="orderFilter">
+          <option value="open">À traiter (nouvelles + confirmées)</option>
+          <option value="nouvelle">Nouvelles</option>
+          <option value="confirmee">Confirmées</option>
+          <option value="livree">Livrées</option>
+          <option value="annulee">Annulées</option>
+          <option value="all">Toutes</option>
+        </select>
+        <button class="btn sm" type="button" id="ordersRefresh">Actualiser</button>
+      </div>
+    </div>
+    <div class="stats" id="orderStats"></div>
+    <div id="ordersList" class="stack"></div>
+  </section>
+
+  <!-- ---------- PRODUITS ---------- -->
+  <section class="panel" id="tab-products" role="tabpanel" hidden>
+    <div class="panel-head"><h2>Produits</h2></div>
+    <form class="acard add-form" id="addProduct" novalidate>
+      <h3>Ajouter un produit</h3>
+      <div class="grid-form">
+        <div class="field"><label for="apCat">Catégorie</label>
+          <select id="apCat" name="category">
+            <option value="classique">Trompe-l'œil · Classique</option>
+            <option value="special">Trompe-l'œil · Spécial</option>
+            <option value="cupcake">Cupcake · goût d'insert</option>
+          </select></div>
+        <div class="field"><label for="apName">Nom du goût</label><input id="apName" name="name" maxlength="60" required placeholder="Ex. Noisette"></div>
+        <div class="field"><label for="apColor">Couleur</label><input id="apColor" name="color" type="color" value="#C99459"></div>
+      </div>
+      <div class="form-error" id="apError" role="alert" hidden></div>
+      <button class="btn btn-dark" type="submit">Ajouter</button>
+    </form>
+    <div id="productsList"></div>
+  </section>
+
+  <!-- ---------- PRIX ---------- -->
+  <section class="panel" id="tab-prices" role="tabpanel" hidden>
+    <div class="panel-head"><h2>Prix &amp; offre</h2></div>
+    <form id="pricesForm" class="stack" novalidate>
+      <div class="acard">
+        <h3>Trompe-l'œil · prix dégressif</h3>
+        <p class="muted small">Un palier = « à partir de X pièces, Y € la pièce ». Le premier palier doit commencer à 1.</p>
+        <div id="tiersEditor" class="stack-sm"></div>
+        <button class="btn sm" type="button" id="addTier">+ Ajouter un palier</button>
+      </div>
+      <div class="acard">
+        <h3>Cupcakes à la pièce</h3>
+        <div class="grid-form">
+          <div class="field"><label for="sCupPrice">Prix d'un cupcake (€)</label><input id="sCupPrice" type="number" step="0.01" min="0" required></div>
+          <div class="field"><label for="sCupMin">Minimum de pièces</label><input id="sCupMin" type="number" step="1" min="1" required></div>
+        </div>
+      </div>
+      <div class="acard">
+        <h3>Offre du moment · bouquet</h3>
+        <label class="check-line"><input type="checkbox" id="sPromoOn"> Afficher l'offre sur la carte</label>
+        <div class="grid-form">
+          <div class="field"><label for="sPromoTitle">Titre</label><input id="sPromoTitle" maxlength="80"></div>
+          <div class="field"><label for="sPromoSize">Nombre de cupcakes</label><input id="sPromoSize" type="number" step="1" min="1"></div>
+          <div class="field"><label for="sPromoPrice">Prix du bouquet (€)</label><input id="sPromoPrice" type="number" step="0.01" min="0"></div>
+        </div>
+      </div>
+      <div class="acard">
+        <h3>Bouquet sur mesure</h3>
+        <p class="muted small">Prix calculé avec le prix d'un cupcake ci-dessus.</p>
+        <div class="grid-form">
+          <div class="field"><label for="sCustMin">Minimum de pièces</label><input id="sCustMin" type="number" step="1" min="1"></div>
+          <div class="field"><label for="sCustMax">Maximum de pièces</label><input id="sCustMax" type="number" step="1" min="1"></div>
+        </div>
+      </div>
+      <div class="acard">
+        <h3>Textes de la carte</h3>
+        <div class="field"><label for="sTagline">Phrase d'accueil</label><textarea id="sTagline" maxlength="240"></textarea></div>
+        <div class="field"><label for="sNote">Mention en bas de carte</label><input id="sNote" maxlength="160"></div>
+      </div>
+      <div class="form-error" id="pricesError" role="alert" hidden></div>
+      <div class="sticky-save"><button class="btn btn-dark btn-lg" type="submit">Enregistrer les prix</button></div>
+    </form>
+  </section>
+
+  <!-- ---------- PHOTOS ---------- -->
+  <section class="panel" id="tab-photos" role="tabpanel" hidden>
+    <div class="panel-head"><h2>Photos de la carte</h2></div>
+    <p class="muted small">Ces photos s'affichent sous les titres de la carte. Les photos de chaque goût se gèrent dans l'onglet Produits.</p>
+    <div class="photo-slots">
+      <div class="acard photo-slot" data-slot="tle_image_url">
+        <h3>Photo trompe-l'œil</h3>
+        <div class="slot-preview"></div>
+        <div class="inline wrap">
+          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-slot-file></label>
+          <button class="btn sm" type="button" data-slot-remove>Retirer</button>
+        </div>
+      </div>
+      <div class="acard photo-slot" data-slot="cupcake_image_url">
+        <h3>Photo cupcakes floraux</h3>
+        <div class="slot-preview"></div>
+        <div class="inline wrap">
+          <label class="btn btn-dark sm file-btn">Choisir une photo<input type="file" accept="image/*" data-slot-file></label>
+          <button class="btn sm" type="button" data-slot-remove>Retirer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
