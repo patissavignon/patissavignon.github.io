@@ -96,7 +96,15 @@ Dans **Authentication › URL Configuration**, mettez dans **Site URL** l'adress
 | **Prix & offre** | Paliers du prix dégressif (vous pouvez en ajouter), prix et minimum des cupcakes, offre bouquet (activer ou désactiver, titre, taille, prix), limites du bouquet sur mesure, textes de la carte. |
 | **Photos** | Photo sous le titre trompe-l'œil et photo sous « Cupcakes floraux ». Vous pouvez les ajouter, les changer ou les retirer. |
 
-Les photos sont réduites automatiquement avant l'envoi : une photo prise au téléphone convient très bien.
+### Photos : toujours le même rendu
+
+Chaque photo envoyée s'ouvre dans un **studio de cadrage** :
+
+- **Même format pour toutes** : carré 1000×1000 pour les goûts, paysage 1600×1000 pour les photos de la carte, quelle que soit la photo de départ.
+- **Cadrage** : faites glisser la photo et réglez le zoom. La grille aide à centrer la pâtisserie.
+- **Harmonisation automatique** (case cochée par défaut) : la même retouche est appliquée à chaque photo (blancs neutres, même luminosité, même contraste, légère touche chaude). Vos photos semblent venir du même shooting.
+
+Pour un résultat encore plus homogène, photographiez toujours vos pâtisseries sur le même fond clair, à la lumière du jour près d'une fenêtre, sans flash, avec le téléphone à la même hauteur.
 
 ## Sécurité
 

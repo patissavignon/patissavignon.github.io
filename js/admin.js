@@ -48,28 +48,12 @@
     return x.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   }
 
-  /* ---------- Photos : réduction puis envoi vers Supabase Storage ---------- */
-  function resizeImage(file, maxSide) {
-    return new Promise(function (resolve, reject) {
-      if (!/^image\//.test(file.type)) { reject(new Error('Ce fichier n’est pas une image.')); return; }
-      var url = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function () {
-        var k = Math.min(1, maxSide / Math.max(img.width, img.height));
-        var w = Math.round(img.width * k), h = Math.round(img.height * k);
-        var c = document.createElement('canvas'); c.width = w; c.height = h;
-        var ctx = c.getContext('2d');
-        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('Image illisible.')); }, 'image/jpeg', 0.85);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Image illisible (format non pris en charge ?).')); };
-      img.src = url;
-    });
-  }
-  async function uploadPhoto(file, folder) {
-    var blob = await resizeImage(file, 1600);
+  /* ---------- Photos : studio (cadrage + harmonisation) puis envoi ---------- */
+  /** Renvoie l'adresse publique de la photo, ou null si l'envoi est annulé */
+  async function uploadPhoto(file, folder, format) {
+    var blob = await T.studio.open(file, format);
+    if (!blob) return null;
+    toast('Envoi de la photo…');
     var path = folder + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
     var up = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
     if (up.error) throw up.error;
@@ -358,9 +342,10 @@
       var p = products.find(function (x) { return x.id === id; });
       var file = e.target.files && e.target.files[0];
       if (!file) return;
-      toast('Envoi de la photo…');
+      e.target.value = '';
       try {
-        var url = await uploadPhoto(file, 'produits');
+        var url = await uploadPhoto(file, 'produits', 'carre');
+        if (!url) return;
         var r = await sb.from('products').update({ image_url: url }).eq('id', id);
         if (r.error) throw r.error;
         if (p.image_url) await deletePhoto(p.image_url);
@@ -475,10 +460,11 @@
       slot.querySelector('[data-slot-file]').addEventListener('change', async function (e) {
         var file = e.target.files && e.target.files[0];
         if (!file) return;
-        toast('Envoi de la photo…');
+        e.target.value = '';
         try {
           var old = settings[key];
-          var url = await uploadPhoto(file, 'carte');
+          var url = await uploadPhoto(file, 'carte', 'bandeau');
+          if (!url) return;
           var patch = {}; patch[key] = url;
           var r = await sb.from('settings').update(patch).eq('id', 1).select().single();
           if (r.error) throw r.error;
@@ -487,7 +473,6 @@
           renderSlots();
           toast('Photo enregistrée');
         } catch (err) { fail(err); }
-        e.target.value = '';
       });
       slot.querySelector('[data-slot-remove]').onclick = async function () {
         var old = settings[key], patch = {}; patch[key] = null;
