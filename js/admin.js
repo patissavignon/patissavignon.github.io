@@ -363,11 +363,21 @@
         '<button class="btn sm" type="button" data-space-new>Nouveau lien secret</button>' +
         '</div>' +
         '<div class="inline wrap" style="margin-top:10px">' +
-        '<label class="small" for="rate-' + code + '">Commission / pièce (€)</label>' +
-        '<input class="rate-input" id="rate-' + code + '" type="number" step="0.01" min="0" value="' + esc(c.commission_per_piece) + '" data-rate>' +
-        '<button class="btn sm" type="button" data-save-rate>Enregistrer</button>' +
+        '<span class="small">Commission : <b>' + money(c.commission_per_piece) + '</b> / pièce</span>' +
+        '<button class="btn sm" type="button" data-edit>Modifier</button>' +
         '<button class="btn sm' + (c.active ? ' danger' : '') + '" type="button" data-toggle>' + (c.active ? 'Désactiver' : 'Réactiver') + '</button>' +
-        '</div></article>';
+        '</div>' +
+        '<div class="sales-edit" data-edit-box hidden>' +
+        '<div class="grid-form">' +
+        '<div class="field"><label for="en-' + code + '">Nom et prénom</label><input id="en-' + code + '" data-e="name" maxlength="80" value="' + esc(c.name) + '"></div>' +
+        '<div class="field"><label for="ep-' + code + '">Téléphone</label><input id="ep-' + code + '" data-e="phone" type="tel" maxlength="40" value="' + esc(c.phone || '') + '"></div>' +
+        '<div class="field"><label for="er-' + code + '">Commission par pièce (€)</label><input id="er-' + code + '" data-e="rate" type="number" step="0.01" min="0" value="' + esc(c.commission_per_piece) + '"></div>' +
+        '</div>' +
+        '<p class="muted small">Le code du lien (« ' + code + ' ») ne se modifie pas, pour ne pas casser les liens déjà partagés.</p>' +
+        '<div class="inline wrap">' +
+        '<button class="btn btn-dark sm" type="button" data-save-edit>Enregistrer</button>' +
+        '<button class="btn sm" type="button" data-cancel-edit>Annuler</button>' +
+        '</div></div></article>';
     }).join('');
   }
 
@@ -432,12 +442,21 @@
         toast('Nouveau lien créé. Renvoyez-le-lui.');
         loadSales();
       }
-      if (e.target.matches('[data-save-rate]')) {
-        var rate = Number(card.querySelector('[data-rate]').value);
+      if (e.target.matches('[data-edit]') || e.target.matches('[data-cancel-edit]')) {
+        var box = card.querySelector('[data-edit-box]');
+        box.hidden = !box.hidden;
+        if (!box.hidden) card.querySelector('[data-e="name"]').focus();
+      }
+      if (e.target.matches('[data-save-edit]')) {
+        var newName = card.querySelector('[data-e="name"]').value.trim();
+        var newPhone = card.querySelector('[data-e="phone"]').value.trim();
+        var rate = Number(card.querySelector('[data-e="rate"]').value);
+        if (!newName) return toast('Le nom ne peut pas être vide', true);
         if (!(rate >= 0)) return toast('Commission invalide', true);
-        var r = await sb.from('commercials').update({ commission_per_piece: rate }).eq('code', code);
+        var r = await sb.from('commercials')
+          .update({ name: newName, phone: newPhone || null, commission_per_piece: rate }).eq('code', code);
         if (r.error) return fail(r.error);
-        toast('Commission enregistrée');
+        toast('Modifications enregistrées');
         loadSales();
       }
       if (e.target.matches('[data-toggle]')) {

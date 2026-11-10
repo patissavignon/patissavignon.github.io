@@ -189,3 +189,4 @@ code { background: var(--line-soft); padding: 1px 6px; border-radius: 6px; font-
 .cm-right { text-align: right; font-weight: 800; white-space: nowrap; }
 .sales-assign { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .sales-assign select { min-height: 36px; font-size: 14px; }
+.sales-edit { border-top: 1px solid var(--line-soft); padding-top: 10px; }
