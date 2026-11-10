@@ -255,6 +255,12 @@
   var SITE_URL = new URL('./', location.href).href;
 
   function salesLink(code) { return SITE_URL + '?ref=' + encodeURIComponent(code); }
+  function spaceLink(c) { return SITE_URL + 'commercial.html?k=' + encodeURIComponent(c.access_token || ''); }
+  function waPhone(p) {
+    var phone = String(p || '').replace(/\D/g, '');
+    if (phone.charAt(0) === '0') phone = '33' + phone.slice(1);
+    return phone;
+  }
 
   function salesBadge(code) {
     if (!code) return '<div class="sales-badge direct">Client direct</div>';
@@ -332,6 +338,12 @@
         '<button class="btn btn-dark sm" type="button" data-copy>Copier le lien</button>' +
         '<button class="btn sm" type="button" data-wa>Envoyer par WhatsApp</button>' +
         '</div>' +
+        '<div class="slot-sub">Son espace privé (ses chiffres uniquement)</div>' +
+        '<div class="inline wrap">' +
+        '<button class="btn btn-dark sm" type="button" data-space-wa>Envoyer son espace</button>' +
+        '<button class="btn sm" type="button" data-space-copy>Copier le lien</button>' +
+        '<button class="btn sm" type="button" data-space-new>Nouveau lien secret</button>' +
+        '</div>' +
         '<div class="inline wrap" style="margin-top:10px">' +
         '<label class="small" for="rate-' + code + '">Commission / pièce (€)</label>' +
         '<input class="rate-input" id="rate-' + code + '" type="number" step="0.01" min="0" value="' + esc(c.commission_per_piece) + '" data-rate>' +
@@ -384,9 +396,23 @@
       }
       if (e.target.matches('[data-wa]')) {
         var text = 'Bonjour ' + c.name.split(' ')[0] + ', voici ton lien personnel Trompe l’Œil Event à partager avec tes clients : ' + link;
-        var phone = String(c.phone || '').replace(/\D/g, '');
-        if (phone.charAt(0) === '0') phone = '33' + phone.slice(1);
-        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+        window.open('https://wa.me/' + waPhone(c.phone) + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      }
+      if (e.target.matches('[data-space-wa]')) {
+        var msg = 'Bonjour ' + c.name.split(' ')[0] + ', voici ton espace personnel pour suivre tes ventes et ta commission (ne le partage pas) : ' + spaceLink(c);
+        window.open('https://wa.me/' + waPhone(c.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      }
+      if (e.target.matches('[data-space-copy]')) {
+        try { await navigator.clipboard.writeText(spaceLink(c)); toast('Lien de son espace copié'); }
+        catch (err) { window.prompt('Copiez ce lien :', spaceLink(c)); }
+      }
+      if (e.target.matches('[data-space-new]')) {
+        if (!window.confirm('Créer un nouveau lien secret pour ' + c.name + ' ? L’ancien lien de son espace ne marchera plus (son lien client ne change pas).')) return;
+        var tok = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '');
+        var n = await sb.from('commercials').update({ access_token: tok }).eq('code', code);
+        if (n.error) return fail(n.error);
+        toast('Nouveau lien créé. Renvoyez-le-lui.');
+        loadSales();
       }
       if (e.target.matches('[data-save-rate]')) {
         var rate = Number(card.querySelector('[data-rate]').value);

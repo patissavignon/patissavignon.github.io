@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon espace commercial · Trompe l'Œil Event</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2B1D14">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/style.css?v=20261110f">
+<link rel="stylesheet" href="css/admin.css?v=20261110f">
+</head>
+<body>
+<div class="dash">
+  <header class="topbar">
+    <div class="auth-brand light"><span class="serif italic">Trompe l'Œil</span><small>EVENT</small></div>
+  </header>
+
+  <section class="panel">
+    <div id="cmLoading" class="empty">Chargement de votre espace…</div>
+    <div id="cmError" class="form-error" role="alert" hidden></div>
+
+    <div id="cmBody" hidden>
+      <div class="panel-head">
+        <h2 id="cmName"></h2>
+        <div class="inline">
+          <label class="sr" for="cmMonth">Mois</label>
+          <select id="cmMonth"></select>
+        </div>
+      </div>
+      <p class="muted small" id="cmRate"></p>
+
+      <div class="stats" id="cmStats"></div>
+
+      <div class="acard" style="margin-bottom:14px">
+        <h3>Mon lien à partager</h3>
+        <p class="muted small">Chaque client qui commande via ce lien vous est rattaché pour toujours.</p>
+        <div class="sales-link" id="cmLink"></div>
+        <div class="inline wrap" style="margin-top:10px">
+          <button class="btn btn-dark sm" type="button" id="cmCopy">Copier le lien</button>
+          <button class="btn sm" type="button" id="cmShare">Partager sur WhatsApp</button>
+        </div>
+      </div>
+
+      <div class="acard" style="margin-bottom:14px">
+        <h3>Commandes du mois</h3>
+        <div id="cmOrders" class="stack-sm"></div>
+      </div>
+
+      <div class="acard">
+        <h3>Mes clients</h3>
+        <div id="cmClients" class="stack-sm"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js?v=20261110f"></script>
+<script src="js/common.js?v=20261110f"></script>
+<script src="js/commercial.js?v=20261110f"></script>
+</body>
+</html>

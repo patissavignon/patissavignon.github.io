@@ -184,3 +184,6 @@ code { background: var(--line-soft); padding: 1px 6px; border-radius: 6px; font-
 .sales-figs { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
 .sales-link { font-size: 13px; background: var(--line-soft); border-radius: 10px; padding: 8px 10px; word-break: break-all; }
 .rate-input { width: 90px; min-height: 40px; border-radius: 12px; border: 1.5px solid #D9C7A6; padding: 0 10px; font-size: 15px; }
+.cm-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.cm-row:last-child { border-bottom: 0; }
+.cm-right { text-align: right; font-weight: 800; white-space: nowrap; }

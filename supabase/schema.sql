@@ -568,3 +568,6 @@ cross join lateral (
 ) pc
 where o.status <> 'annulee'
 group by 1, c.code, c.name, c.commission_per_piece;
+
+-- Espace commercial (lien privé) — ajout du 10/11/2026
+-- Voir migration 'espace_commercial' : colonne commercials.access_token + fonction commercial_dashboard(p_token, p_month)
