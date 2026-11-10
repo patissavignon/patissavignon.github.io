@@ -259,3 +259,40 @@ img { max-width: 100%; display: block; }
 .back { align-self: flex-start; min-height: 46px; padding: 0 16px 0 10px; }
 .owner-link { display: block; text-align: center; font-size: 12px; color: var(--ink-soft); padding: 0 0 18px; }
 .owner-link a { color: var(--ink-soft); }
+
+/* ---------- Reflet de brillance (effet « carte holographique ») ----------
+   Une fine ligne lumineuse traverse chaque carte en diagonale, toutes les
+   quelques secondes, avec un léger décalage d'une carte à l'autre.
+   Désactivé automatiquement si l'appareil demande de réduire les animations. */
+.item, .promo { position: relative; overflow: hidden; isolation: isolate; }
+.item::after, .promo::after {
+  content: ''; position: absolute; top: -60%; bottom: -60%; left: -70%; width: 45%;
+  pointer-events: none; z-index: 2;
+  background: linear-gradient(100deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(214, 186, 128, .10) 22%,
+    rgba(232, 204, 150, .38) 40%,
+    rgba(255, 252, 240, .95) 50%,
+    rgba(196, 176, 236, .28) 58%,
+    rgba(150, 210, 220, .16) 66%,
+    rgba(255, 255, 255, 0) 82%);
+  transform: translateX(0) rotate(14deg);
+  animation: tle-shine 6.5s ease-in-out infinite;
+  animation-delay: var(--shine-delay, 0s);
+}
+.item:hover::after, .item:focus-within::after { animation-duration: 1.6s; }
+.item.has::after { background: linear-gradient(100deg,
+    rgba(255, 255, 255, 0) 0%, rgba(176, 138, 62, .16) 22%, rgba(216, 180, 110, .50) 40%,
+    rgba(255, 250, 232, .98) 50%, rgba(196, 176, 236, .30) 58%, rgba(150, 210, 220, .18) 66%,
+    rgba(255, 255, 255, 0) 82%); }
+/* Le contenu reste lisible : le reflet passe derrière le texte et les boutons */
+.item > *, .promo > * { position: relative; z-index: 3; }
+@keyframes tle-shine {
+  0%   { transform: translateX(0) rotate(14deg); opacity: 0; }
+  6%   { opacity: 1; }
+  28%  { transform: translateX(480%) rotate(14deg); opacity: 1; }
+  32%, 100% { transform: translateX(480%) rotate(14deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .item::after, .promo::after { animation: none; display: none; }
+}

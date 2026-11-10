@@ -93,9 +93,11 @@
     return '<span class="' + (cls === 'dot' ? 'dot' : 'pastille') + '" style="background:' + T.ball(p.color) + '" aria-hidden="true"></span>';
   }
 
-  function itemCard(p) {
+  function itemCard(p, i) {
     var n = esc(p.name);
-    return '<div class="item" data-tle="' + esc(p.id) + '">' + visual(p) +
+    // Décalage du reflet : il passe en vague d'une carte à l'autre
+    var delay = ((i || 0) * 0.35).toFixed(2) + 's';
+    return '<div class="item" data-tle="' + esc(p.id) + '" style="--shine-delay:' + delay + '">' + visual(p) +
       '<div class="name">' + n + '</div>' +
       '<div class="stepper">' +
       '<button class="round minus" type="button" data-act="sub" aria-label="Retirer un ' + n + '">−</button>' +
@@ -142,7 +144,7 @@
 
     var std = byCat('classique'), spe = byCat('special'), cup = byCat('cupcake');
     $('gridStd').innerHTML = std.map(itemCard).join('');
-    $('gridSpe').innerHTML = spe.map(itemCard).join('');
+    $('gridSpe').innerHTML = spe.map(function (p, i) { return itemCard(p, std.length + i); }).join('');
     $('countStd').textContent = plural(std.length, 'goût', 'goûts');
     $('countSpe').textContent = plural(spe.length, 'goût', 'goûts');
 
