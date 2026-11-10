@@ -342,3 +342,13 @@ img { max-width: 100%; display: block; }
 /* Le reflet fixe reste discret sur le bandeau pour garder le pavé prix bien foncé */
 .banner::before { opacity: .35; }
 .banner-price { position: relative; z-index: 6; }
+
+/* Bandeau « Installer l'appli » */
+.install-bar { display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--cream); padding: 10px 12px; border-bottom: 1px solid #4a3627; }
+.install-bar[hidden] { display: none; }
+.install-bar img { border-radius: 11px; flex: 0 0 auto; }
+.install-txt { flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.install-txt b { font-size: 15px; }
+.install-txt span { font-size: 12.5px; color: var(--cream-soft); }
+.install-btn { flex: 0 0 auto; min-height: 40px; padding: 0 16px; border-radius: 20px; border: 0; background: var(--cream); color: var(--ink); font-weight: 800; font-size: 14px; font-family: var(--sans); }
+.install-x { flex: 0 0 auto; width: 32px; height: 40px; border: 0; background: none; color: var(--cream-soft); font-size: 24px; line-height: 1; }

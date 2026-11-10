@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Trompe l'Œil Event",
+  "short_name": "Trompe l'Œil",
+  "description": "Commandez nos pâtisseries trompe-l'œil et cupcakes floraux.",
+  "lang": "fr",
+  "start_url": "./?app=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2B1D14",
+  "theme_color": "#2B1D14",
+  "icons": [
+    { "src": "img/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

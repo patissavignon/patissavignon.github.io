@@ -8,14 +8,36 @@
 <meta name="theme-color" content="#2B1D14">
 <meta property="og:title" content="Trompe l'Œil Event · Carte professionnelle">
 <meta property="og:description" content="Pâtisseries trompe-l'œil et cupcakes floraux. Plus vous commandez, moins c'est cher.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://patissavignon.github.io/">
+<meta property="og:image" content="https://patissavignon.github.io/img/apercu.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/app/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trompe l'Œil">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261110i">
+<link rel="stylesheet" href="css/style.css?v=20261110j">
 </head>
 <body>
 <div class="app" id="app">
+
+  <!-- Bandeau « Installer l'appli » (affiché seulement s'il est utile) -->
+  <div class="install-bar" id="installBar" hidden>
+    <img src="img/app/icon-192.png" alt="" width="44" height="44">
+    <div class="install-txt">
+      <b>Installez notre appli</b>
+      <span id="installHint">Commandez en 2 clics depuis votre écran d'accueil</span>
+    </div>
+    <button class="install-btn" id="installBtn" type="button">Installer</button>
+    <button class="install-x" id="installClose" type="button" aria-label="Fermer">×</button>
+  </div>
 
   <div class="demo-banner" id="demoBanner" hidden>Mode démo : la carte est consultable, mais les commandes ne sont pas encore envoyées.</div>
 
@@ -200,8 +222,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20261110i"></script>
-<script src="js/common.js?v=20261110i"></script>
-<script src="js/carte.js?v=20261110i"></script>
+<script src="js/config.js?v=20261110j"></script>
+<script src="js/common.js?v=20261110j"></script>
+<script src="js/carte.js?v=20261110j"></script>
+<script src="js/install.js?v=20261110j"></script>
 </body>
 </html>
