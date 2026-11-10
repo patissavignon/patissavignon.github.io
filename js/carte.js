@@ -133,7 +133,10 @@
 
   function cupRow(p) {
     var n = esc(p.name);
-    return '<div class="row" data-cup="' + esc(p.id) + '">' + visual(p, 'dot') +
+    var pic = p.image_url
+      ? '<button class="dot-btn" type="button" data-zoom="' + esc(p.image_url) + '" data-zoom-name="Cupcake ' + n + '" aria-label="Agrandir la photo du cupcake ' + n + '">' + visual(p, 'dot') + '</button>'
+      : visual(p, 'dot');
+    return '<div class="row" data-cup="' + esc(p.id) + '">' + pic +
       '<div class="name">' + n + '</div>' +
       '<button class="round minus" type="button" data-act="sub" aria-label="Retirer un cupcake ' + n + '">−</button>' +
       '<span class="q" aria-live="polite">0</span>' +
@@ -518,4 +521,42 @@
     }
   }
   start();
+
+  /* ------------------------------------------------------------------ */
+  /*  Agrandir une photo de cupcake (clic sur la petite image ronde)     */
+  /* ------------------------------------------------------------------ */
+  (function zoomViewer() {
+    var box = document.createElement('div');
+    box.className = 'zoom';
+    box.hidden = true;
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.innerHTML = '<button class="zoom-x" type="button" aria-label="Fermer">×</button>' +
+      '<figure><img alt=""><figcaption></figcaption></figure>';
+    document.body.appendChild(box);
+    var img = box.querySelector('img'), cap = box.querySelector('figcaption'), x = box.querySelector('.zoom-x');
+    var lastBtn = null;
+
+    function open(btn) {
+      lastBtn = btn;
+      img.src = btn.getAttribute('data-zoom');
+      img.alt = btn.getAttribute('data-zoom-name') || '';
+      cap.textContent = btn.getAttribute('data-zoom-name') || '';
+      box.hidden = false;
+      document.body.style.overflow = 'hidden';
+      x.focus();
+    }
+    function close() {
+      box.hidden = true;
+      document.body.style.overflow = '';
+      if (lastBtn) lastBtn.focus();
+    }
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-zoom]');
+      if (btn) { e.preventDefault(); e.stopPropagation(); open(btn); }
+    }, true);
+    x.onclick = close;
+    box.addEventListener('click', function (e) { if (e.target === box) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+  })();
 })();

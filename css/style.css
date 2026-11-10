@@ -204,7 +204,9 @@ img { max-width: 100%; display: block; }
 .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .list-head h3 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: 24px; line-height: 1; }
 .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); margin-top: 6px; }
-.row .dot { width: 34px; height: 34px; border-radius: 17px; flex: none; object-fit: cover; }
+.row .dot { width: 64px; height: 64px; border-radius: 50%; flex: none; object-fit: cover; box-shadow: 0 4px 10px rgba(43, 29, 20, .16); }
+.dot-btn { flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: zoom-in; display: inline-flex; }
+.dot-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .row .name { flex: 1 1 0; min-width: 0; font-size: 16px; font-weight: 700; }
 .row .minus, .row .q { display: none; }
 .row .q { min-width: 26px; text-align: center; font-size: 19px; font-weight: 800; }
@@ -352,3 +354,11 @@ img { max-width: 100%; display: block; }
 .install-txt span { font-size: 12.5px; color: var(--cream-soft); }
 .install-btn { flex: 0 0 auto; min-height: 40px; padding: 0 16px; border-radius: 20px; border: 0; background: var(--cream); color: var(--ink); font-weight: 800; font-size: 14px; font-family: var(--sans); }
 .install-x { flex: 0 0 auto; width: 32px; height: 40px; border: 0; background: none; color: var(--cream-soft); font-size: 24px; line-height: 1; }
+
+/* Photo agrandie */
+.zoom { position: fixed; inset: 0; z-index: 10000; background: rgba(20, 13, 9, .88); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.zoom[hidden] { display: none; }
+.zoom figure { margin: 0; max-width: 520px; width: 100%; text-align: center; }
+.zoom img { width: 100%; max-height: 75vh; object-fit: contain; border-radius: 18px; background: var(--line-soft); }
+.zoom figcaption { color: var(--cream); font-family: var(--serif); font-size: 24px; margin-top: 10px; }
+.zoom-x { position: absolute; top: 14px; right: 14px; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--cream); color: var(--ink); font-size: 30px; line-height: 1; font-weight: 700; }
