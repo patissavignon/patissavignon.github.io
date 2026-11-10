@@ -484,14 +484,58 @@
     renderSlots();
   }
 
+  /** Envoi direct vers Supabase Storage avec suivi de progression */
+  async function uploadWithProgress(path, blob, onProgress) {
+    var cfg = window.TLE_CONFIG, sess = (await sb.auth.getSession()).data.session;
+    if (!sess) throw new Error('Session expirée : reconnectez-vous.');
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', cfg.SUPABASE_URL.replace(/\/$/, '') + '/storage/v1/object/' + BUCKET + '/' + path);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + sess.access_token);
+      xhr.setRequestHeader('apikey', cfg.SUPABASE_KEY);
+      xhr.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+      xhr.setRequestHeader('cache-control', 'max-age=31536000');
+      xhr.setRequestHeader('x-upsert', 'false');
+      xhr.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else {
+          var msg = 'Envoi refusé (' + xhr.status + ')';
+          try { var j = JSON.parse(xhr.responseText); if (j.message) msg += ' : ' + j.message; } catch (e) {}
+          if (xhr.status === 413) msg = 'Vidéo trop lourde pour l\u2019envoi (50 Mo maximum).';
+          reject(new Error(msg));
+        }
+      };
+      xhr.onerror = function () { reject(new Error('Connexion interrompue pendant l\u2019envoi. Réessayez en Wi-Fi si possible.')); };
+      xhr.send(blob);
+      uploadWithProgress.current = xhr;
+    });
+  }
+
+  /** Allège la vidéo, l'envoie avec une barre de progression et renvoie son adresse (null si annulé) */
   async function uploadVideo(file) {
     if (!/^video\//.test(file.type)) throw new Error('Ce fichier n\u2019est pas une vidéo.');
-    if (file.size > VIDEO_MAX) throw new Error('Vidéo trop lourde (' + Math.round(file.size / 1048576) + ' Mo). Maximum 50 Mo : raccourcissez-la à 10-15 secondes.');
-    var ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4';
-    var path = 'carte/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-    var up = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false });
-    if (up.error) throw up.error;
-    return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    var modal = T.studio.progressModal('Vidéo de la carte');
+    try {
+      modal.set('Lecture de la vidéo…', 2);
+      var res = await T.studio.optimizeVideo(file, modal);
+      if (!res || modal.cancelled) return null;
+      var blob = res.blob;
+      if (blob.size > VIDEO_MAX) throw new Error('Vidéo trop lourde (' + Math.round(blob.size / 1048576) + ' Mo). Maximum 50 Mo : raccourcissez-la à 10-15 secondes.');
+      var type = (blob.type || file.type || 'video/mp4').split(';')[0];
+      var ext = type === 'video/webm' ? 'webm' : type === 'video/quicktime' ? 'mov' : 'mp4';
+      var path = 'carte/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      var mo = (blob.size / 1048576).toFixed(1).replace('.', ',');
+      modal.onCancel = function () { if (uploadWithProgress.current) uploadWithProgress.current.abort(); };
+      await uploadWithProgress(path, new Blob([blob], { type: type }), function (f) {
+        modal.set('Envoi de la vidéo (' + mo + ' Mo)… ' + Math.round(f * 100) + ' %', 60 + f * 40);
+      });
+      if (modal.cancelled) return null;
+      modal.set('Vidéo envoyée', 100);
+      return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    } finally {
+      modal.close();
+    }
   }
 
   function bindSlots() {
@@ -517,9 +561,8 @@
           try {
             var key = kind === 'video' ? m.video : m.image, old = settings[key], url;
             if (kind === 'video') {
-              if (file.type === 'video/quicktime') toast('Vidéo .MOV : si elle ne s\u2019affiche pas sur certains téléphones, exportez-la en MP4.');
-              else toast('Envoi de la vidéo…');
               url = await uploadVideo(file);
+              if (!url) return;
             } else {
               url = await uploadPhoto(file, 'carte', 'bandeau');
               if (!url) return;

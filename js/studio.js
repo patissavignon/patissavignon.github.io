@@ -186,6 +186,112 @@
     });
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Vidéos : fenêtre de progression + allègement automatique          */
+  /* ------------------------------------------------------------------ */
+  var VIDEO = { w: 1280, h: 800, fps: 30, maxSeconds: 20, bitrate: 3000000 };
+
+  /** Petite fenêtre avec aperçu, barre de progression et bouton Annuler */
+  function progressModal(title) {
+    var wrap = document.createElement('div');
+    wrap.className = 'studio-wrap';
+    wrap.innerHTML =
+      '<div class="studio" role="dialog" aria-modal="true" aria-labelledby="vpTitle">' +
+      '<h3 id="vpTitle"></h3>' +
+      '<div class="studio-frame vp-frame" style="aspect-ratio:' + VIDEO.w + '/' + VIDEO.h + '"></div>' +
+      '<div class="vp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="vp-fill"></div></div>' +
+      '<p class="vp-text" aria-live="polite"></p>' +
+      '<p class="muted small">Gardez cette page ouverte et l\u2019écran allumé pendant l\u2019opération.</p>' +
+      '<div class="studio-actions"><button class="btn" type="button" data-cancel>Annuler</button></div></div>';
+    wrap.querySelector('#vpTitle').textContent = title;
+    document.body.appendChild(wrap);
+    var api = {
+      cancelled: false,
+      onCancel: null,
+      frame: wrap.querySelector('.vp-frame'),
+      set: function (text, pct) {
+        wrap.querySelector('.vp-text').textContent = text;
+        if (pct != null) {
+          var v = Math.max(0, Math.min(100, Math.round(pct)));
+          wrap.querySelector('.vp-fill').style.width = v + '%';
+          wrap.querySelector('.vp-bar').setAttribute('aria-valuenow', v);
+        }
+      },
+      close: function () { wrap.remove(); }
+    };
+    wrap.querySelector('[data-cancel]').onclick = function () {
+      api.cancelled = true;
+      if (api.onCancel) api.onCancel();
+      api.close();
+    };
+    return api;
+  }
+
+  function pickMime() {
+    var list = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return null;
+    for (var i = 0; i < list.length; i++) if (MediaRecorder.isTypeSupported(list[i])) return list[i];
+    return null;
+  }
+
+  /**
+   * Réenregistre la vidéo au format de la carte (1280×800, sans son, 20 s max).
+   * Renvoie un Blob léger, ou le fichier d'origine si le navigateur ne sait pas le faire.
+   */
+  function optimizeVideo(file, modal) {
+    return new Promise(function (resolve, reject) {
+      var mime = pickMime();
+      var canvas = document.createElement('canvas');
+      if (!mime || !canvas.captureStream) { resolve({ blob: file, optimized: false }); return; }
+      var url = URL.createObjectURL(file);
+      var v = document.createElement('video');
+      v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+      v.preload = 'auto'; v.src = url;
+      canvas.width = VIDEO.w; canvas.height = VIDEO.h;
+      canvas.style.width = '100%'; canvas.style.height = '100%';
+      modal.frame.appendChild(canvas);
+      var ctx = canvas.getContext('2d');
+      var rec, chunks = [], done = false, raf = 0;
+
+      function cleanup() { cancelAnimationFrame(raf); try { v.pause(); } catch (e) {} URL.revokeObjectURL(url); }
+      modal.onCancel = function () { done = true; try { if (rec && rec.state !== 'inactive') rec.stop(); } catch (e) {} cleanup(); resolve(null); };
+
+      v.onerror = function () { cleanup(); reject(new Error('Vidéo illisible sur cet appareil. Essayez une vidéo MP4.')); };
+      v.onloadedmetadata = function () {
+        var iw = v.videoWidth, ih = v.videoHeight;
+        if (!iw || !ih) { cleanup(); reject(new Error('Vidéo illisible.')); return; }
+        var dur = Math.min(isFinite(v.duration) && v.duration > 0 ? v.duration : VIDEO.maxSeconds, VIDEO.maxSeconds);
+        var k = Math.max(VIDEO.w / iw, VIDEO.h / ih), sw = VIDEO.w / k, sh = VIDEO.h / k;
+        var sx = (iw - sw) / 2, sy = (ih - sh) / 2;
+        function draw() { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, VIDEO.w, VIDEO.h); }
+        var stream = canvas.captureStream(VIDEO.fps);
+        rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: VIDEO.bitrate });
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function () {
+          cleanup();
+          if (modal.cancelled) return;
+          resolve({ blob: new Blob(chunks, { type: mime.split(';')[0] }), optimized: true });
+        };
+        function loop() {
+          if (done) return;
+          draw();
+          modal.set('Préparation de la vidéo… ' + Math.round(v.currentTime) + ' / ' + Math.round(dur) + ' s', v.currentTime / dur * 60);
+          if (v.currentTime >= dur || v.ended) { done = true; draw(); setTimeout(function () { rec.stop(); }, 120); return; }
+          raf = requestAnimationFrame(loop);
+        }
+        v.onended = function () { if (!done) { done = true; rec.stop(); } };
+        draw();
+        rec.start(500);
+        var p = v.play();
+        if (p && p.catch) p.catch(function () { cleanup(); resolve({ blob: file, optimized: false }); });
+        loop();
+      };
+    });
+  }
+
   window.TLE = window.TLE || {};
-  window.TLE.studio = { open: open, harmonize: harmonize, FORMATS: FORMATS, LOOK: LOOK };
+  window.TLE.studio = {
+    open: open, harmonize: harmonize, FORMATS: FORMATS, LOOK: LOOK,
+    VIDEO: VIDEO, progressModal: progressModal, optimizeVideo: optimizeVideo
+  };
 })();
