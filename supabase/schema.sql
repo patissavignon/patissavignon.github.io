@@ -571,3 +571,5 @@ group by 1, c.code, c.name, c.commission_per_piece;
 
 -- Espace commercial (lien privé) — ajout du 10/11/2026
 -- Voir migration 'espace_commercial' : colonne commercials.access_token + fonction commercial_dashboard(p_token, p_month)
+
+-- Photo de profil des commerciaux — migration 'photo_commercial' : colonne commercials.photo_url (+ renvoyée par commercial_dashboard)

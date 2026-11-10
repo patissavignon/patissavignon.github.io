@@ -50,6 +50,10 @@
     $('cmLoading').hidden = true;
     $('cmBody').hidden = false;
     $('cmName').textContent = data.name;
+    var av = $('cmAvatar');
+    av.innerHTML = data.photo_url
+      ? '<img src="' + esc(data.photo_url) + '" alt="">'
+      : '<span>' + esc(String(data.name || '?').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('')) + '</span>';
     $('cmRate').textContent = 'Votre commission : ' + money(data.commission_par_piece) + ' par pièce commandée (hors commandes annulées).' +
       (data.active ? '' : ' Votre lien est actuellement désactivé.');
 

@@ -277,6 +277,18 @@
     return '<div class="sales-badge">Apporté par ' + esc(c ? c.name : code) + '</div>';
   }
 
+  function initials(name) {
+    return String(name || '?').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+  }
+  function avatar(c) {
+    var inner = c.photo_url
+      ? '<img src="' + esc(c.photo_url) + '" alt="Photo de ' + esc(c.name) + '">'
+      : '<span>' + esc(initials(c.name)) + '</span>';
+    return '<label class="avatar" title="Ajouter ou changer la photo">' + inner +
+      '<span class="avatar-cam" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/><circle cx="12" cy="13" r="3"/></svg></span>' +
+      '<input type="file" accept="image/*" data-photo-input aria-label="Photo de profil de ' + esc(c.name) + '" hidden></label>';
+  }
+
   function salesSelect(o) {
     if (!commercials.length) return '';
     var opts = '<option value="">Client direct</option>' + commercials.map(function (c) {
@@ -343,8 +355,9 @@
       var s = byCode[c.code] || {};
       var code = esc(c.code);
       return '<article class="acard sales-card' + (c.active ? '' : ' off') + '" data-sales="' + code + '">' +
-        '<div class="order-top"><div><h3>' + esc(c.name) + '</h3>' +
-        '<div class="meta">' + (c.phone ? esc(c.phone) + ' · ' : '') + (c.active ? 'Actif' : 'Désactivé') + '</div></div>' +
+        '<div class="order-top"><div class="sales-id">' + avatar(c) +
+        '<div><h3>' + esc(c.name) + '</h3>' +
+        '<div class="meta">' + (c.phone ? esc(c.phone) + ' · ' : '') + (c.active ? 'Actif' : 'Désactivé') + '</div></div></div>' +
         '<div class="order-total">' + money(s.commission_a_payer || 0) + '</div></div>' +
         '<div class="sales-figs">' +
         '<span><b>' + (s.clients || 0) + '</b> client(s)</span>' +
@@ -373,6 +386,7 @@
         '<div class="field"><label for="ep-' + code + '">Téléphone</label><input id="ep-' + code + '" data-e="phone" type="tel" maxlength="40" value="' + esc(c.phone || '') + '"></div>' +
         '<div class="field"><label for="er-' + code + '">Commission par pièce (€)</label><input id="er-' + code + '" data-e="rate" type="number" step="0.01" min="0" value="' + esc(c.commission_per_piece) + '"></div>' +
         '</div>' +
+        (c.photo_url ? '<button class="btn sm danger" type="button" data-photo-remove style="margin-bottom:8px">Retirer la photo</button>' : '') +
         '<p class="muted small">Le code du lien (« ' + code + ' ») ne se modifie pas, pour ne pas casser les liens déjà partagés.</p>' +
         '<div class="inline wrap">' +
         '<button class="btn btn-dark sm" type="button" data-save-edit>Enregistrer</button>' +
@@ -411,6 +425,25 @@
       loadSales();
     });
 
+    $('salesList').addEventListener('change', async function (e) {
+      if (!e.target.matches('[data-photo-input]')) return;
+      var card = e.target.closest('[data-sales]');
+      var code = card.getAttribute('data-sales');
+      var c = commercials.find(function (x) { return x.code === code; });
+      var file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file || !c) return;
+      try {
+        var url = await uploadPhoto(file, 'commerciaux', 'profil');
+        if (!url) return;
+        var r = await sb.from('commercials').update({ photo_url: url }).eq('code', code);
+        if (r.error) throw r.error;
+        if (c.photo_url) await deletePhoto(c.photo_url);
+        toast('Photo enregistrée');
+        loadSales();
+      } catch (err) { fail(err); }
+    });
+
     $('salesList').addEventListener('click', async function (e) {
       var card = e.target.closest('[data-sales]');
       if (!card) return;
@@ -446,6 +479,14 @@
         var box = card.querySelector('[data-edit-box]');
         box.hidden = !box.hidden;
         if (!box.hidden) card.querySelector('[data-e="name"]').focus();
+      }
+      if (e.target.matches('[data-photo-remove]')) {
+        if (!window.confirm('Retirer la photo de ' + c.name + ' ?')) return;
+        var pr = await sb.from('commercials').update({ photo_url: null }).eq('code', code);
+        if (pr.error) return fail(pr.error);
+        await deletePhoto(c.photo_url);
+        toast('Photo retirée');
+        loadSales();
       }
       if (e.target.matches('[data-save-edit]')) {
         var newName = card.querySelector('[data-e="name"]').value.trim();

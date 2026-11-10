@@ -15,7 +15,8 @@
 
   var FORMATS = {
     carre:   { w: 1000, h: 1000, label: 'Photo produit · format carré' },
-    bandeau: { w: 1600, h: 1000, label: 'Photo de la carte · format paysage' }
+    bandeau: { w: 1600, h: 1000, label: 'Photo de la carte · format paysage' },
+    profil:  { w: 600, h: 600, label: 'Photo de profil · format carré' }
   };
 
   /* Réglages de la « signature » visuelle, communs à toutes les photos */

@@ -190,3 +190,8 @@ code { background: var(--line-soft); padding: 1px 6px; border-radius: 6px; font-
 .sales-assign { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .sales-assign select { min-height: 36px; font-size: 14px; }
 .sales-edit { border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.sales-id { display: flex; align-items: center; gap: 12px; }
+.avatar { position: relative; flex: 0 0 auto; width: 60px; height: 60px; border-radius: 50%; background: var(--cream); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; cursor: pointer; }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.avatar-cam { position: absolute; right: -2px; bottom: -2px; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--cream); display: flex; align-items: center; justify-content: center; border: 2px solid var(--white); }
+.avatar.static { cursor: default; }
